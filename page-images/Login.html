@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error": "#ffb4ab",
+                      "secondary": "#c4c3e7",
+                      "primary-container": "#6e88ff",
+                      "on-secondary-fixed-variant": "#444461",
+                      "on-primary-container": "#001d79",
+                      "secondary-container": "#484966",
+                      "primary-fixed": "#dde1ff",
+                      "on-surface-variant": "#c4c5d7",
+                      "tertiary-fixed": "#ffdbc8",
+                      "on-primary": "#00228a",
+                      "on-tertiary-container": "#481e00",
+                      "surface-variant": "#33343d",
+                      "outline-variant": "#444654",
+                      "on-primary-fixed-variant": "#0034c0",
+                      "tertiary-container": "#e1721e",
+                      "surface-tint": "#b9c3ff",
+                      "surface-container-lowest": "#0c0e15",
+                      "on-tertiary-fixed": "#321300",
+                      "surface-bright": "#383942",
+                      "error-container": "#93000a",
+                      "inverse-surface": "#e2e1ed",
+                      "surface-dim": "#12131b",
+                      "background": "#0A0A0F",
+                      "inverse-primary": "#2d50d9",
+                      "on-background": "#e2e1ed",
+                      "surface-container-low": "#1a1b23",
+                      "tertiary-fixed-dim": "#ffb68a",
+                      "secondary-fixed-dim": "#c4c3e7",
+                      "on-tertiary": "#522300",
+                      "primary": "#4F6EF7",
+                      "on-secondary": "#2d2e4a",
+                      "surface": "#12131b",
+                      "on-error": "#690005",
+                      "outline": "#2A2A3A",
+                      "surface-container": "#1e1f27",
+                      "on-surface": "#e2e1ed",
+                      "on-primary-fixed": "#001257",
+                      "on-error-container": "#ffdad6",
+                      "on-secondary-fixed": "#181933",
+                      "tertiary": "#ffb68a",
+                      "surface-container-highest": "#33343d",
+                      "on-secondary-container": "#b9b9db",
+                      "surface-container-high": "#282932",
+                      "primary-fixed-dim": "#b9c3ff",
+                      "on-tertiary-fixed-variant": "#743500",
+                      "inverse-on-surface": "#2f3039",
+                      "secondary-fixed": "#e1e0ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "data-gap": "8px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "container-padding": "24px"
+              },
+              "fontFamily": {
+                      "headline-xl": ["Space Grotesk"],
+                      "body-md": ["Inter"],
+                      "data-mono": ["Space Grotesk"],
+                      "label-caps": ["Space Grotesk"],
+                      "headline-md": ["Space Grotesk"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-xl": ["24px", {"lineHeight": "120%", "letterSpacing": "0.15em", "fontWeight": "700"}],
+                      "body-md": ["14px", {"lineHeight": "150%", "letterSpacing": "normal", "fontWeight": "400"}],
+                      "data-mono": ["14px", {"lineHeight": "140%", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "100%", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                      "headline-md": ["16px", {"lineHeight": "120%", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "160%", "letterSpacing": "normal", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0A0A0F;
+            color: #e2e1ed;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex items-center justify-center p-container-padding">
+<div class="w-full max-w-sm flex flex-col items-center">
+<!-- Header Section -->
+<div class="w-full text-center mb-10">
+<h1 class="font-headline-xl text-headline-xl text-on-surface uppercase mb-2">
+                AI INVESTIGATOR
+            </h1>
+<p class="font-label-caps text-label-caps text-[#7A7A9A] uppercase tracking-[0.3em]">
+                Polis Sorgu Sistemi
+            </p>
+</div>
+<!-- Structural Divider -->
+<div class="w-full h-[1px] bg-outline-variant mb-12"></div>
+<!-- Login Form -->
+<div class="w-full space-y-6">
+<div class="space-y-2">
+<label class="block font-label-caps text-label-caps text-[#7A7A9A] uppercase ml-1">
+                    ROZET NO
+                </label>
+<input class="w-full h-12 bg-[#13131A] border border-outline rounded-[10px] px-4 font-data-mono text-data-mono text-on-surface placeholder:text-surface-variant focus:outline-none focus:border-primary transition-colors" placeholder="7742-ALPHA-01" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block font-label-caps text-label-caps text-[#7A7A9A] uppercase ml-1">
+                    ŞİFRE
+                </label>
+<input class="w-full h-12 bg-[#13131A] border border-outline rounded-[10px] px-4 font-data-mono text-data-mono text-on-surface placeholder:text-surface-variant focus:outline-none focus:border-primary transition-colors" placeholder="••••••••" type="password"/>
+</div>
+<button class="w-full h-14 bg-primary text-white font-headline-md text-headline-md uppercase rounded-[12px] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4">
+<span class="material-symbols-outlined text-[20px]" data-icon="lock_open">lock_open</span>
+                GİRİŞ YAP
+            </button>
+</div>
+<!-- System Footer Metadata -->
+<div class="mt-16 flex flex-col items-center gap-4 opacity-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="security">security</span>
+<span class="font-data-mono text-[10px] tracking-widest uppercase">Encrypted Connection Active</span>
+</div>
+<div class="font-data-mono text-[10px] text-[#7A7A9A]">
+                UNIT_CONTROL_V.04 // NODE_01
+            </div>
+</div>
+</div>
+<!-- Background Technical Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-8 left-8 border-l border-t border-outline-variant w-12 h-12"></div>
+<div class="absolute top-8 right-8 border-r border-t border-outline-variant w-12 h-12"></div>
+<div class="absolute bottom-8 left-8 border-l border-b border-outline-variant w-12 h-12"></div>
+<div class="absolute bottom-8 right-8 border-r border-b border-outline-variant w-12 h-12"></div>
+<!-- Subtle Scanline Effect -->
+<div class="absolute inset-0 bg-[linear-gradient(rgba(18,19,27,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.01),rgba(0,255,0,0.005),rgba(0,0,255,0.01))] bg-[length:100%_2px,3px_100%]"></div>
+</div>
+</body></html>

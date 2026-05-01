@@ -1,0 +1,28 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# macOS
+.DS_Store
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/mcp.json
+
+# Expo
+.expo-shared/
+
+# Bundle artifacts
+*.jsbundle

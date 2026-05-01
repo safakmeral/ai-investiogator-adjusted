@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>UNIT_CONTROL_V.04 - Interrogation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ffb4ab",
+                        "secondary": "#c4c3e7",
+                        "primary-container": "#6e88ff",
+                        "on-secondary-fixed-variant": "#444461",
+                        "on-primary-container": "#001d79",
+                        "secondary-container": "#484966",
+                        "primary-fixed": "#dde1ff",
+                        "on-surface-variant": "#c4c5d7",
+                        "tertiary-fixed": "#ffdbc8",
+                        "on-primary": "#00228a",
+                        "on-tertiary-container": "#481e00",
+                        "surface-variant": "#33343d",
+                        "outline-variant": "#444654",
+                        "on-primary-fixed-variant": "#0034c0",
+                        "tertiary-container": "#e1721e",
+                        "surface-tint": "#b9c3ff",
+                        "surface-container-lowest": "#0c0e15",
+                        "on-tertiary-fixed": "#321300",
+                        "surface-bright": "#383942",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e2e1ed",
+                        "surface-dim": "#12131b",
+                        "background": "#0A0A0F",
+                        "inverse-primary": "#2d50d9",
+                        "on-background": "#e2e1ed",
+                        "surface-container-low": "#1a1b23",
+                        "tertiary-fixed-dim": "#ffb68a",
+                        "secondary-fixed-dim": "#c4c3e7",
+                        "on-tertiary": "#522300",
+                        "primary": "#b9c3ff",
+                        "on-secondary": "#2d2e4a",
+                        "surface": "#12131b",
+                        "on-error": "#690005",
+                        "outline": "#8e90a0",
+                        "surface-container": "#1e1f27",
+                        "on-surface": "#e2e1ed",
+                        "on-primary-fixed": "#001257",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed": "#181933",
+                        "tertiary": "#ffb68a",
+                        "surface-container-highest": "#33343d",
+                        "on-secondary-container": "#b9b9db",
+                        "surface-container-high": "#282932",
+                        "primary-fixed-dim": "#b9c3ff",
+                        "on-tertiary-fixed-variant": "#743500",
+                        "inverse-on-surface": "#2f3039",
+                        "secondary-fixed": "#e1e0ff",
+                        "brand-red": "#E05252",
+                        "brand-green": "#4CAF7D",
+                        "brand-yellow": "#F0A500",
+                        "brand-blue": "#4F6EF7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "data-gap": "8px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "data-mono": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0A0A0F; color: #e2e1ed; overflow: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen font-body-md">
+<!-- TopAppBar from JSON Logic -->
+<header class="flex justify-between items-center w-full px-4 h-12 bg-slate-950 border-b border-slate-800 shrink-0 flex justify-between items-center"><div class="flex items-center h-full">
+<img alt="AI Investigator Logo" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0ujXuHs5PlThEWYU6bZF56fzzTx5w0IFdB4l1L32UD4o76gSGuxzl2yWGHkVoUyGGgRvsducQb92_YZDY7IsRLVTOWpnD_kYp9vPS5XVx9TOxxkHtmC290Ol7YBETybvv2geY1VBgdmbo1ZspAgxLSu9Aei9Gu_-QCtbheGqaWZ3yWPjGVbhiKpS0yeNPIpKRP49Fp4JDTsRe2PZjGTqsfm967gJDGGoPeRrj-BGZySxCpnzZKkNS9S0pseo-3q59DKnSmFwXR1ANw"/>
+</div><div class="flex items-center h-full">
+<img alt="Officer Badge" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0ugbhXxl36gFaWeqCilmO9W0wo17nsFvT27_HN49nCI7qv5WinJyFEhDKgPUkg0QQ84KFcGmRcswdr53htJfxKpc3NlcqSo5Zg93oSbiVqTSxWLycA322-SllM0s8Oc-mXKDcnW0T-q19Z3QQE8296n96PWMuFHcActJqo9ducC0VWoUAqa255gNp5hzyUYuKmfEn77mSSsy6jZ2aFeI2cE1pV-uSEyelzdrCW6C69LZ_24A75Ax5nSNMAjUuqapb_ZXx-EyMdbcg60"/>
+</div></header>
+<!-- Metrics Row -->
+<section class="flex overflow-x-auto p-4 gap-3 hide-scrollbar shrink-0 bg-background">
+<!-- Metric Card 1 -->
+<div class="min-w-[100px] bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-3 flex flex-col justify-between h-20">
+<span class="text-[10px] font-label-caps text-slate-500">ÇELİŞKİ</span>
+<div class="flex flex-col">
+<span class="font-data-mono text-xl text-brand-green">12%</span>
+<div class="w-full bg-slate-800 h-1 mt-1">
+<div class="bg-brand-green h-full" style="width: 12%"></div>
+</div>
+</div>
+</div>
+<!-- Metric Card 2 -->
+<div class="min-w-[100px] bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-3 flex flex-col justify-between h-20">
+<span class="text-[10px] font-label-caps text-slate-500">KAÇINMA</span>
+<div class="flex flex-col">
+<span class="font-data-mono text-xl text-brand-yellow">48%</span>
+<div class="w-full bg-slate-800 h-1 mt-1">
+<div class="bg-brand-yellow h-full" style="width: 48%"></div>
+</div>
+</div>
+</div>
+<!-- Metric Card 3 -->
+<div class="min-w-[100px] bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-3 flex flex-col justify-between h-20">
+<span class="text-[10px] font-label-caps text-slate-500">STRES</span>
+<div class="flex flex-col">
+<span class="font-data-mono text-xl text-brand-red">82%</span>
+<div class="w-full bg-slate-800 h-1 mt-1">
+<div class="bg-brand-red h-full" style="width: 82%"></div>
+</div>
+</div>
+</div>
+<!-- Metric Card 4 -->
+<div class="min-w-[100px] bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-3 flex flex-col justify-between h-20">
+<span class="text-[10px] font-label-caps text-slate-500">TUTARSIZLIK</span>
+<div class="flex flex-col">
+<span class="font-data-mono text-xl text-brand-green">08%</span>
+<div class="w-full bg-slate-800 h-1 mt-1">
+<div class="bg-brand-green h-full" style="width: 8%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Analysis Pill Tabs -->
+<div class="px-4 space-y-3 pb-2 shrink-0">
+<div class="flex items-center gap-3 overflow-x-auto hide-scrollbar">
+<span class="text-[10px] font-label-caps text-slate-500 whitespace-nowrap">BEDEN DİLİ</span>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-brand-red text-white text-[10px] font-bold rounded-full border border-brand-red">GÖZ KAÇIRMA</span>
+<span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-bold rounded-full border border-slate-800">TERLEME</span>
+<span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-bold rounded-full border border-slate-800">TİTREME</span>
+<span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-bold rounded-full border border-slate-800">SAVUNMA</span>
+</div>
+</div>
+<div class="flex items-center gap-3 overflow-x-auto hide-scrollbar">
+<span class="text-[10px] font-label-caps text-slate-500 whitespace-nowrap">SES TONU</span>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-bold rounded-full border border-slate-800">TİTREK SES</span>
+<span class="px-3 py-1 bg-brand-red text-white text-[10px] font-bold rounded-full border border-brand-red">HIZLI KONUŞMA</span>
+<span class="px-3 py-1 bg-slate-900 text-slate-500 text-[10px] font-bold rounded-full border border-slate-800">DÜŞÜK SES</span>
+</div>
+</div>
+</div>
+<!-- Chat Area -->
+<main class="flex-1 overflow-y-auto p-4 space-y-4 bg-background border-t border-[#1a1b23]">
+<!-- AI Message -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="bg-[#13131A] border border-[#2A2A3A] p-3 rounded-tr-xl rounded-bl-xl rounded-br-xl">
+<p class="text-sm font-body-md text-white">Olay gecesi saat 22:45'te tam olarak nerede olduğunuzu tekrar teyit edebilir misiniz?</p>
+</div>
+</div>
+<!-- Alert Banner Red -->
+<div class="w-full border-l-4 border-brand-red bg-brand-red/10 p-3 flex items-center gap-3">
+<span class="material-symbols-outlined text-brand-red text-lg">warning</span>
+<span class="text-xs font-bold font-label-caps text-brand-red">⚠ ÇELİŞKİ TESPİT EDİLDİ</span>
+</div>
+<!-- Suspect Message -->
+<div class="flex flex-col items-end max-w-[85%] ml-auto">
+<div class="bg-[#1C1C26] border border-[#2A2A3A] p-3 rounded-tl-xl rounded-bl-xl rounded-br-xl">
+<p class="text-sm font-body-md text-on-surface">Dediğim gibi, evdeydim. Televizyon izliyordum. Kimseyi görmedim, kimsede beni görmemiş olabilir.</p>
+</div>
+</div>
+<!-- Alert Banner Yellow -->
+<div class="w-full border-l-4 border-brand-yellow bg-brand-yellow/10 p-3 flex items-center gap-3">
+<span class="material-symbols-outlined text-brand-yellow text-lg">sensors</span>
+<span class="text-xs font-bold font-label-caps text-brand-yellow">◉ YÜKSEK STRES SİNYALİ</span>
+</div>
+<!-- AI Message -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="bg-[#13131A] border border-[#2A2A3A] p-3 rounded-tr-xl rounded-bl-xl rounded-br-xl">
+<p class="text-sm font-body-md text-white">Bankamatik kayıtları o saatte evinizin 3 blok ötesindeki bir ATM'de işlem yapıldığını gösteriyor. Buna bir açıklamanız var mı?</p>
+</div>
+</div>
+<!-- Visual Analysis Card -->
+</main>
+<!-- Bottom Action Bar -->
+<footer class="h-20 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between gap-2 shrink-0">
+<!-- Mic Button with pulse effect -->
+<button class="w-14 h-14 bg-brand-red rounded-xl flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(224,82,82,0.3)]">
+<span class="material-symbols-outlined text-white text-3xl">mic</span>
+</button>
+<!-- Soru Üret Button -->
+<button class="flex-[2] h-14 bg-brand-blue rounded-xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-white text-xl">psychology</span>
+<span class="font-headline-md text-white uppercase text-sm tracking-widest">SORU ÜRET</span>
+</button>
+<button class="flex-1 h-14 border border-brand-red/50 text-brand-red rounded-xl flex items-center justify-center hover:bg-brand-red/10 transition-all"><span class="font-headline-md uppercase text-sm tracking-widest">BİTİR</span></button></footer>
+</body></html>

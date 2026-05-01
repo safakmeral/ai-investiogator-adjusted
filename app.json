@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "AI Investigator",
+    "slug": "ai-investigator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aiinvestigator",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.research.aiinvestigator",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Sorgu sırasında şüpheli cevaplarını kaydetmek için mikrofon erişimi gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Şüpheli fotoğrafı eklemek için galeriye erişim gereklidir.",
+        "NSCameraUsageDescription": "Şüpheli fotoğrafı çekmek için kamera erişimi gereklidir."
+      }
+    },
+    "android": {
+      "package": "com.research.aiinvestigator",
+      "permissions": [
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Sorgu sırasında şüpheli cevaplarını kaydetmek için mikrofon erişimi gereklidir."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Şüpheli fotoğrafı eklemek için galeriye erişim gereklidir."
+        }
+      ],
+      "expo-asset"
+    ]
+  }
+}

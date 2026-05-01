@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ffb4ab",
+                        "secondary": "#c4c3e7",
+                        "primary-container": "#6e88ff",
+                        "on-secondary-fixed-variant": "#444461",
+                        "on-primary-container": "#001d79",
+                        "secondary-container": "#484966",
+                        "primary-fixed": "#dde1ff",
+                        "on-surface-variant": "#c4c5d7",
+                        "tertiary-fixed": "#ffdbc8",
+                        "on-primary": "#00228a",
+                        "on-tertiary-container": "#481e00",
+                        "surface-variant": "#33343d",
+                        "outline-variant": "#444654",
+                        "on-primary-fixed-variant": "#0034c0",
+                        "tertiary-container": "#e1721e",
+                        "surface-tint": "#b9c3ff",
+                        "surface-container-lowest": "#0c0e15",
+                        "on-tertiary-fixed": "#321300",
+                        "surface-bright": "#383942",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e2e1ed",
+                        "surface-dim": "#12131b",
+                        "background": "#0A0A0F",
+                        "inverse-primary": "#2d50d9",
+                        "on-background": "#e2e1ed",
+                        "surface-container-low": "#1a1b23",
+                        "tertiary-fixed-dim": "#ffb68a",
+                        "secondary-fixed-dim": "#c4c3e7",
+                        "on-tertiary": "#522300",
+                        "primary": "#4F6EF7",
+                        "on-secondary": "#2d2e4a",
+                        "surface": "#13131A",
+                        "on-error": "#690005",
+                        "outline": "#2A2A3A",
+                        "surface-container": "#1e1f27",
+                        "on-surface": "#e2e1ed",
+                        "on-primary-fixed": "#001257",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed": "#181933",
+                        "tertiary": "#ffb68a",
+                        "surface-container-highest": "#33343d",
+                        "on-secondary-container": "#b9b9db",
+                        "surface-container-high": "#282932",
+                        "primary-fixed-dim": "#b9c3ff",
+                        "on-tertiary-fixed-variant": "#743500",
+                        "inverse-on-surface": "#2f3039",
+                        "secondary-fixed": "#e1e0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "data-mono": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["24px", {"lineHeight": "120%", "letterSpacing": "0.15em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "150%", "letterSpacing": "normal", "fontWeight": "400"}],
+                        "data-mono": ["14px", {"lineHeight": "140%", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "100%", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                        "headline-md": ["16px", {"lineHeight": "120%", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "160%", "letterSpacing": "normal", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0A0A0F; color: #e2e1ed; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-md antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-4 h-14 bg-slate-950 border-b border-slate-800 fixed top-0 z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-indigo-500" data-icon="security">security</span>
+<h1 class="font-headline-xl text-[14px] tracking-widest text-indigo-500 uppercase">AI INVESTIGATOR</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex flex-col items-end">
+<span class="text-on-surface font-headline-md text-xs uppercase tracking-wide">OFFICER NAME</span>
+<span class="text-outline-variant font-data-mono text-[10px] uppercase">BADGE ID-7742</span>
+</div>
+<button class="hover:bg-slate-900 p-1 transition-colors duration-100 rounded">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="logout">logout</span>
+</button>
+</div>
+</header>
+<main class="flex-1 mt-14 mb-4 p-4 max-w-4xl mx-auto w-full space-y-6">
+<!-- Search and Global Controls -->
+<section class="space-y-4 pt-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="w-full bg-surface border border-outline rounded-[10px] pl-12 pr-4 py-3 font-data-mono text-sm tracking-wider placeholder:text-outline-variant focus:outline-none focus:border-primary transition-all" placeholder="VAKA VEYA ŞÜPHELİ ARA..." type="text"/>
+</div>
+<!-- Filter Pills -->
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-6 py-2 bg-primary text-white rounded-full font-label-caps text-[10px] whitespace-nowrap">TÜMÜ</button>
+<button class="px-6 py-2 border border-outline bg-transparent text-on-surface-variant rounded-full font-label-caps text-[10px] whitespace-nowrap hover:border-on-surface transition-colors">AÇIK</button>
+<button class="px-6 py-2 border border-outline bg-transparent text-on-surface-variant rounded-full font-label-caps text-[10px] whitespace-nowrap hover:border-on-surface transition-colors">KAPALI</button>
+</div>
+</section>
+<!-- Case List -->
+<section class="space-y-3">
+<div class="flex justify-between items-center px-1">
+<span class="font-label-caps text-outline-variant text-[10px]">AKTİF KAYITLAR (128)</span>
+<span class="font-data-mono text-[10px] text-primary">SIRALAMA: SON</span>
+</div>
+<!-- Case Card 1 -->
+<div class="bg-surface border border-outline rounded-xl p-4 flex items-center gap-4 hover:border-primary transition-colors cursor-pointer group">
+<div class="w-[60px] h-[60px] bg-surface-variant rounded-lg flex-shrink-0 overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 transition-opacity" data-alt="gritty black and white mugshot of a serious middle-aged man with sharp features and stubble against a clinical gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQ6nPPJ2VJxvrRuW015V7oVOH8jdf7USHjWJ0g5goQZDrOdQZ5sPKuvKg6Kn1hkFlp_C5SYwxH04XjVjJqk7FLznUDL3H_oPrNdTo4mgS-eUVOhFm5iW5XW10LZPWMH4NMqh-HgXuPoZ1zGklbPguJJqnYKvfckh3UzWUaRpODsnXTCZFKStd8GtwEomwbKlMb5dgQfVvoZxiu3zu7UdDrNVRQ7n3A3mprBxLbAM72dS5dfFboVMcMf1VXyB9V9gvpxTSgp4DnJuD8"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-on-surface truncate">MURAT YILMAZ</h3>
+<span class="font-data-mono text-[10px] text-outline-variant">Vaka #A7F2</span>
+</div>
+<p class="font-body-md text-on-surface-variant text-xs mt-0.5">NİTELİKLİ DOLANDIRICILIK</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="text-[10px] font-label-caps text-[#4CAF7D] border border-[#4CAF7D]/30 px-2 py-0.5 rounded-sm bg-[#4CAF7D]/5">AÇIK</span>
+<span class="text-[9px] font-data-mono text-outline-variant uppercase">GÜNCELLEME: 2DK ÖNCE</span>
+</div>
+</div>
+</div>
+<!-- Case Card 2 -->
+<div class="bg-surface border border-outline rounded-xl p-4 flex items-center gap-4 hover:border-primary transition-colors cursor-pointer group">
+<div class="w-[60px] h-[60px] bg-surface-variant rounded-lg flex-shrink-0 overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 transition-opacity" data-alt="front view close-up portrait of a woman with an intense expression in harsh dramatic lighting with cold blue undertones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWngbEISlwI_oTeLj8BLtE90iSU_hv3WYI8CvpKHzHv61zgTtBFmSYD6NrBhteaSwoxD_mmHMvbDiGB9MEJ4RlJaAuTSohQ5G2wInMvH6J8vXLA7sdnAYe1OMG_OjnwYuYsI9_78p-xWpA96ebMgUeCow973YZDl1FcTcvPkQVK5jwq7Hc9dwB2cvSw9vKieu_jXHXQTt3-pJ2m6aY_e-wDamyJFeKz0tPd3Yeem5eYgUE3XpnmA-_pdPDJRUugstfqMw8FDJL77iS"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-on-surface truncate">SELİN DEMİR</h3>
+<span class="font-data-mono text-[10px] text-outline-variant">Vaka #B914</span>
+</div>
+<p class="font-body-md text-on-surface-variant text-xs mt-0.5">SİBER SALDIRI / VERİ İHLALİ</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="text-[10px] font-label-caps text-outline-variant border border-outline-variant/30 px-2 py-0.5 rounded-sm bg-outline-variant/5">KAPALI</span>
+<span class="text-[9px] font-data-mono text-outline-variant uppercase">ARŞİV: 12.03.2024</span>
+</div>
+</div>
+</div>
+<!-- Case Card 3 -->
+<div class="bg-surface border border-outline rounded-xl p-4 flex items-center gap-4 hover:border-primary transition-colors cursor-pointer group">
+<div class="w-[60px] h-[60px] bg-surface-variant rounded-lg flex-shrink-0 overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 transition-opacity" data-alt="shadowy profile of a male suspect in a dark studio setting with minimalist aesthetic and cold surveillance mood" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3L7lVsGSBpZks7kPmVM1TjACUq4j7evkh6CLCl7LfQu56Oj2QXO_7QJlx623rtkj0LWW6XJC62D9ZUpSIsM4Nedti32YsFmaDQ7WovObmtrE0LKR85PdZ1oa11E2yw6wDwHvZ3TpiNmAbZMv1QJYa0aMHCq_x4SsocFO7kHLFG_Zv6Q4lpPfLe6LZE-7Y9IxIhzdyIJn-iMh4B4I7wbZlt9Of4Ar0NLOVCPxwoTrokDLcy8-IQu2p8_cHxCnIyoB3kZo8DYYMPXCn"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-on-surface truncate">AHMET KAYA</h3>
+<span class="font-data-mono text-[10px] text-outline-variant">Vaka #C328</span>
+</div>
+<p class="font-body-md text-on-surface-variant text-xs mt-0.5">ORGANİZE KAÇAKÇILIK</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="text-[10px] font-label-caps text-[#4CAF7D] border border-[#4CAF7D]/30 px-2 py-0.5 rounded-sm bg-[#4CAF7D]/5">AÇIK</span>
+<span class="text-[9px] font-data-mono text-outline-variant uppercase">TAKİP: AKTİF</span>
+</div>
+</div>
+</div>
+<!-- Case Card 4 -->
+<div class="bg-surface border border-outline rounded-xl p-4 flex items-center gap-4 hover:border-primary transition-colors cursor-pointer group">
+<div class="w-[60px] h-[60px] bg-surface-variant rounded-lg flex-shrink-0 overflow-hidden border border-outline-variant">
+<div class="w-full h-full flex items-center justify-center bg-slate-900">
+<span class="material-symbols-outlined text-outline-variant" data-icon="person">person</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-headline-md text-on-surface truncate">MEHMET CAN</h3>
+<span class="font-data-mono text-[10px] text-outline-variant">Vaka #D550</span>
+</div>
+<p class="font-body-md text-on-surface-variant text-xs mt-0.5">KAMU MALINA ZARAR</p>
+<div class="mt-2 flex items-center gap-2">
+<span class="text-[10px] font-label-caps text-[#4CAF7D] border border-[#4CAF7D]/30 px-2 py-0.5 rounded-sm bg-[#4CAF7D]/5">AÇIK</span>
+<span class="text-[9px] font-data-mono text-outline-variant uppercase">BİLDİRİM: YENİ</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform z-40 border-2 border-primary-container">
+<span class="material-symbols-outlined text-2xl" data-icon="add">add</span>
+</button>
+</body></html>

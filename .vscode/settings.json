@@ -1,0 +1,27 @@
+{
+  "deno.enablePaths": [
+    "supabase/functions"
+  ],
+  "deno.unstable": false,
+  "deno.importMap": "./supabase/functions/deno.json",
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.expo": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.expo/**": true,
+    "**/.git/objects/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.expo": true,
+    "**/package-lock.json": true
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "off"
+}

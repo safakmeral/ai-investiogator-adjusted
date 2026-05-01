@@ -1,0 +1,48 @@
+project_id = "ai-investigator"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = false
+
+# Kendi JWT doğrulamasını yapan fonksiyonlar — Supabase gateway'in
+# yerleşik JWT kontrolünü devre dışı bırak.
+[functions.move]
+verify_jwt = false
+
+[functions.analyze]
+verify_jwt = false
+
+[functions.strategy]
+verify_jwt = false
+
+[functions.transcribe]
+verify_jwt = false
+
+[functions.extract-text]
+verify_jwt = false
+
+# login ve seed-officer zaten JWT gerektirmiyor
+[functions.login]
+verify_jwt = false
+
+[functions.seed-officer]
+verify_jwt = false

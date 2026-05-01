@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ffb4ab",
+                        "secondary": "#c4c3e7",
+                        "primary-container": "#6e88ff",
+                        "on-secondary-fixed-variant": "#444461",
+                        "on-primary-container": "#001d79",
+                        "secondary-container": "#484966",
+                        "primary-fixed": "#dde1ff",
+                        "on-surface-variant": "#c4c5d7",
+                        "tertiary-fixed": "#ffdbc8",
+                        "on-primary": "#00228a",
+                        "on-tertiary-container": "#481e00",
+                        "surface-variant": "#33343d",
+                        "outline-variant": "#444654",
+                        "on-primary-fixed-variant": "#0034c0",
+                        "tertiary-container": "#e1721e",
+                        "surface-tint": "#b9c3ff",
+                        "surface-container-lowest": "#0c0e15",
+                        "on-tertiary-fixed": "#321300",
+                        "surface-bright": "#383942",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e2e1ed",
+                        "surface-dim": "#12131b",
+                        "background": "#12131b",
+                        "inverse-primary": "#2d50d9",
+                        "on-background": "#e2e1ed",
+                        "surface-container-low": "#1a1b23",
+                        "tertiary-fixed-dim": "#ffb68a",
+                        "secondary-fixed-dim": "#c4c3e7",
+                        "on-tertiary": "#522300",
+                        "primary": "#b9c3ff",
+                        "on-secondary": "#2d2e4a",
+                        "surface": "#12131b",
+                        "on-error": "#690005",
+                        "outline": "#8e90a0",
+                        "surface-container": "#1e1f27",
+                        "on-surface": "#e2e1ed",
+                        "on-primary-fixed": "#001257",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary-fixed": "#181933",
+                        "tertiary": "#ffb68a",
+                        "surface-container-highest": "#33343d",
+                        "on-secondary-container": "#b9b9db",
+                        "surface-container-high": "#282932",
+                        "primary-fixed-dim": "#b9c3ff",
+                        "on-tertiary-fixed-variant": "#743500",
+                        "inverse-on-surface": "#2f3039",
+                        "secondary-fixed": "#e1e0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "data-mono": ["Space Grotesk"],
+                        "label-caps": ["Space Grotesk"],
+                        "headline-md": ["Space Grotesk"],
+                        "body-lg": ["Inter"]
+                    },
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0A0A0F; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #33343d; border-radius: 10px; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="flex justify-between items-center w-full px-4 h-12 bg-slate-950 border-b border-slate-800 sticky top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-500" data-icon="security">security</span>
+</div>
+<div class="flex items-center gap-3"><div class="flex flex-col items-end">
+<span class="font-space-grotesk tracking-tighter uppercase font-bold text-[10px] leading-tight text-white">OFFICER NAME</span>
+<span class="font-space-grotesk tracking-tighter uppercase font-medium text-[10px] leading-tight text-slate-500">BADGE ID-7742</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-slate-800 border border-indigo-500 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional portrait of a high-ranking officer in a dark tactical uniform with clinical cold lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6M1e5nVcV3nzMMnR5uFZNO78NL4KbHqtW26RJST1sr7MCNOJi95ig_5ykkKQjfCXmfg0ri_Nj6nMWw5QOvErXx9HWhwtXVjR0SWJIUTEqmSJZQD53KmCwqGdUMhJPaKp9KPXKVT63ojrtf_Jyzqq9PSLzBKz1xZHKAL42bKSU02_WTZAtM8qHVcoN4r-Gd31AR0f9ZyenGX1H9v_tm2NcLSxkEZWqAQnnF9LEubd_QcVtOE-miLmlAWUKM6R3fQIXNvzLrp_WxfgH"/>
+</div></div>
+</header>
+<main class="max-w-2xl mx-auto px-container-padding py-10">
+<!-- Page Header -->
+<div class="mb-10 text-center">
+<h1 class="font-headline-xl text-white uppercase mb-2">SORGU DEĞERLENDİRMESİ</h1>
+<p class="text-on-surface-variant font-body-md opacity-80">Sorgu tamamlandı. Lütfen değerlendirmenizi yapın.</p>
+</div>
+<!-- Survey Section -->
+<div class="space-y-4 custom-scrollbar">
+<!-- Card 1 -->
+<div class="bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-4 flex flex-col gap-4">
+<label class="font-label-caps text-on-surface uppercase tracking-widest">Soruların kalitesini değerlendirin</label>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#7A7A9A]" data-icon="star">star</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-4 flex flex-col gap-4">
+<label class="font-label-caps text-on-surface uppercase tracking-widest">Çelişki tespitleri ne kadar doğruydu?</label>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#7A7A9A]" data-icon="star">star</span>
+<span class="material-symbols-outlined text-[#7A7A9A]" data-icon="star">star</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-4 flex flex-col gap-4">
+<label class="font-label-caps text-on-surface uppercase tracking-widest">Sistem genel olarak ne kadar yardımcı oldu?</label>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[#F0A500]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<!-- Card 4: Binary Toggle -->
+<div class="bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-4 flex flex-col gap-4">
+<label class="font-label-caps text-on-surface uppercase tracking-widest">Şüpheli gerçekten suçlu muydü?</label>
+<div class="grid grid-cols-2 gap-4">
+<button class="py-3 px-6 border-2 border-[#7A7A9A] rounded-[12px] font-label-caps text-[#7A7A9A] hover:bg-red-950/10 hover:border-[#E05252] hover:text-[#E05252] transition-all">
+                        SUÇLU
+                    </button>
+<button class="py-3 px-6 border-2 border-[#7A7A9A] rounded-[12px] font-label-caps text-[#7A7A9A] hover:bg-green-950/10 hover:border-[#4CAF7D] hover:text-[#4CAF7D] transition-all">
+                        SUÇSUZ
+                    </button>
+</div>
+</div>
+<!-- Card 5: Text Input -->
+<div class="bg-[#13131A] border border-[#2A2A3A] rounded-[12px] p-4 flex flex-col gap-4">
+<label class="font-label-caps text-on-surface uppercase tracking-widest">Ek notlar (isteğe bağlı)</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-lg text-on-surface focus:border-primary-container focus:ring-0 font-body-md p-3 placeholder-slate-600" placeholder="Sorgu sürecine dair gözlemlerinizi girin..." rows="4"></textarea>
+</div>
+</div>
+<!-- CTA Action -->
+<div class="mt-8">
+<button class="w-full h-[52px] bg-[#4F6EF7] text-white font-label-caps tracking-[0.25em] text-sm rounded-[12px] border border-white/10 hover:bg-primary-container active:scale-[0.98] transition-all shadow-xl shadow-primary-container/20 uppercase">
+                DEĞERLENDİRMEYİ KAYDET
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Shell from JSON) -->
+</body></html>

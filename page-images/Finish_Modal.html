@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ffb4ab",
+                    "secondary": "#c4c3e7",
+                    "primary-container": "#6e88ff",
+                    "on-secondary-fixed-variant": "#444461",
+                    "on-primary-container": "#001d79",
+                    "secondary-container": "#484966",
+                    "primary-fixed": "#dde1ff",
+                    "on-surface-variant": "#c4c5d7",
+                    "tertiary-fixed": "#ffdbc8",
+                    "on-primary": "#00228a",
+                    "on-tertiary-container": "#481e00",
+                    "surface-variant": "#33343d",
+                    "outline-variant": "#444654",
+                    "on-primary-fixed-variant": "#0034c0",
+                    "tertiary-container": "#e1721e",
+                    "surface-tint": "#b9c3ff",
+                    "surface-container-lowest": "#0c0e15",
+                    "on-tertiary-fixed": "#321300",
+                    "surface-bright": "#383942",
+                    "error-container": "#93000a",
+                    "inverse-surface": "#e2e1ed",
+                    "surface-dim": "#12131b",
+                    "background": "#12131b",
+                    "inverse-primary": "#2d50d9",
+                    "on-background": "#e2e1ed",
+                    "surface-container-low": "#1a1b23",
+                    "tertiary-fixed-dim": "#ffb68a",
+                    "secondary-fixed-dim": "#c4c3e7",
+                    "on-tertiary": "#522300",
+                    "primary": "#b9c3ff",
+                    "on-secondary": "#2d2e4a",
+                    "surface": "#12131b",
+                    "on-error": "#690005",
+                    "outline": "#8e90a0",
+                    "surface-container": "#1e1f27",
+                    "on-surface": "#e2e1ed",
+                    "on-primary-fixed": "#001257",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-fixed": "#181933",
+                    "tertiary": "#ffb68a",
+                    "surface-container-highest": "#33343d",
+                    "on-secondary-container": "#b9b9db",
+                    "surface-container-high": "#282932",
+                    "primary-fixed-dim": "#b9c3ff",
+                    "on-tertiary-fixed-variant": "#743500",
+                    "inverse-on-surface": "#2f3039",
+                    "secondary-fixed": "#e1e0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "data-gap": "8px",
+                    "unit": "4px",
+                    "gutter": "16px",
+                    "container-padding": "24px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Space Grotesk"],
+                    "body-md": ["Inter"],
+                    "data-mono": ["Space Grotesk"],
+                    "label-caps": ["Space Grotesk"],
+                    "headline-md": ["Space Grotesk"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-xl": ["24px", {"lineHeight": "120%", "letterSpacing": "0.15em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "150%", "letterSpacing": "normal", "fontWeight": "400"}],
+                    "data-mono": ["14px", {"lineHeight": "140%", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "100%", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                    "headline-md": ["16px", {"lineHeight": "120%", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "160%", "letterSpacing": "normal", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .custom-backdrop {
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-dim text-on-surface min-h-screen font-body-md overflow-hidden">
+<!-- Background Interrogation Screen (Simulated Content) -->
+<div class="fixed inset-0 z-0 opacity-40 p-4 grid grid-cols-12 gap-4">
+<div class="col-span-8 space-y-4">
+<div class="h-64 bg-surface-container border border-outline-variant p-4">
+<div class="flex justify-between mb-4">
+<span class="font-label-caps text-on-surface-variant">LIVE_FEED::CAM_01</span>
+<span class="font-label-caps text-error">● RECORDING</span>
+</div>
+<div class="w-full h-40 bg-slate-900 flex items-center justify-center border border-slate-800">
+<span class="material-symbols-outlined text-slate-700 text-4xl">videocam_off</span>
+</div>
+</div>
+<div class="h-96 bg-surface-container border border-outline-variant p-4 font-data-mono text-xs overflow-hidden">
+<p class="text-primary mb-2">[14:22:01] OFFICER: State your full name for the record.</p>
+<p class="text-on-surface mb-2">[14:22:05] SUBJECT: I already told you, I wasn't there.</p>
+<p class="text-primary mb-2">[14:22:12] OFFICER: The biometric data suggests otherwise.</p>
+<p class="text-secondary mb-2">[BIOMETRIC_SPIKE: HEART_RATE 124BPM]</p>
+<p class="text-on-surface mb-2">[14:22:30] SUBJECT: Your sensors are malfunctioning.</p>
+</div>
+</div>
+<div class="col-span-4 space-y-4">
+<div class="h-full bg-surface-container border border-outline-variant p-4">
+<span class="font-label-caps text-on-surface-variant block mb-4">CASE_FILES</span>
+<div class="space-y-2">
+<div class="h-12 bg-surface-container-high border border-outline-variant"></div>
+<div class="h-12 bg-surface-container-high border border-outline-variant"></div>
+<div class="h-12 bg-surface-container-high border border-outline-variant"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Top Navigation Bar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-4 h-12 bg-slate-950 docked full-width top-0 border-b border-slate-800 z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-indigo-500 dark:text-indigo-400">security</span>
+<span class="text-lg font-black tracking-widest text-indigo-500 dark:text-indigo-400 uppercase">UNIT_CONTROL_V.04</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-space-grotesk tracking-tighter uppercase font-bold text-xs text-indigo-400">SESSION_ACTIVE</span>
+<div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border border-indigo-500">
+<img alt="Officer Badge ID-7742" data-alt="close up of a metallic police badge with intricate engravings reflecting cold blue light in a dark room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUk7p6k5raL2DrmC3lrDfRYQ647keEnuPJ7tIBajwKDAf8UcMaferiuBH3VH8SmM-JRjnPpJg6jPJNIbvhqvdzU8k61HFrcH5o9rGx9w-Nr1NqXJVyAtZXx-4NsHqeS7oqr_rGX8oBQ3OYOMC8hI_X5-JeSxCZXgiPva26fDBZKCvUHoPNt1fVs_no55m5aoS156ZM4uncklEW-pETy5qrkHHCNKI8Lm77RATh2EeGHa9AojJ2n7J4YfgudTbkH9z8XkJzdDjgTfYs"/>
+</div>
+</div>
+</header>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center custom-backdrop p-6">
+<!-- Modal Card -->
+<div class="w-full max-w-[420px] bg-[#13131A] border border-[#2A2A3A] rounded-[16px] p-6 shadow-2xl">
+<!-- Modal Header -->
+<div class="text-center mb-8">
+<h2 class="font-headline-xl text-on-surface uppercase tracking-[0.2em] mb-2">SORGUYU TAMAMLA</h2>
+<p class="font-body-md text-outline text-xs">Oturumu sonlandırmak için bir eylem seçin.</p>
+</div>
+<!-- Options Stack -->
+<div class="space-y-3 mb-8">
+<!-- Option 1: Complete -->
+<button class="w-full text-left p-4 rounded-xl border border-[#4CAF7D] bg-[#0A1A0F] hover:bg-[#0E2616] transition-colors group">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-[#4CAF7D]" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</div>
+<div>
+<span class="font-headline-md text-[#4CAF7D] block mb-1">Sorguyu Tamamla</span>
+<span class="font-body-md text-outline text-[13px] block leading-tight">Sorgu kapatılır ve anket doldurulur.</span>
+</div>
+</div>
+</button>
+<!-- Option 2: Exit for Now -->
+<button class="w-full text-left p-4 rounded-xl border border-[#2A2A3A] bg-[#13131A] hover:bg-[#1E1E26] transition-colors group">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-on-surface">logout</span>
+</div>
+<div>
+<span class="font-headline-md text-on-surface block mb-1">Şimdilik Çık</span>
+<span class="font-body-md text-outline text-[13px] block leading-tight">Sorgu açık kalır, daha sonra devam edebilirsiniz.</span>
+</div>
+</div>
+</button>
+</div>
+<!-- Cancel Action -->
+<div class="text-center">
+<button class="font-label-caps text-outline hover:text-on-surface transition-colors tracking-widest uppercase py-2 px-4">
+                    İPTAL
+                </button>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation (Shared Component) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 bg-slate-950 border-t border-slate-800">
+<button class="flex flex-col items-center justify-center text-slate-600 px-2 py-1 hover:text-indigo-300">
+<span class="material-symbols-outlined">folder_shared</span>
+<span class="font-space-grotesk font-bold text-[10px] tracking-widest">CASES</span>
+</button>
+<button class="flex flex-col items-center justify-center text-indigo-400 bg-slate-900 border-t-2 border-indigo-500 px-2 py-1 transition-transform active:scale-95">
+<span class="material-symbols-outlined">mic</span>
+<span class="font-space-grotesk font-bold text-[10px] tracking-widest">RECORD</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-600 px-2 py-1 hover:text-indigo-300">
+<span class="material-symbols-outlined">visibility</span>
+<span class="font-space-grotesk font-bold text-[10px] tracking-widest">INTEL</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-600 px-2 py-1 hover:text-indigo-300">
+<span class="material-symbols-outlined">database</span>
+<span class="font-space-grotesk font-bold text-[10px] tracking-widest">LOGS</span>
+</button>
+</nav>
+<!-- Contextual Details for "Dossier" feel -->
+<div class="fixed top-20 right-8 pointer-events-none opacity-20 hidden md:block">
+<div class="border-l border-t border-outline-variant p-4 text-[10px] font-data-mono">
+<p>REF_ID: CRT-9902-X</p>
+<p>LOCATION: SECTOR_07</p>
+<p>PROTOCOL: BRAVO_NINER</p>
+</div>
+</div>
+</body></html>
