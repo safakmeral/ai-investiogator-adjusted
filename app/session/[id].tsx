@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { HeaderBar, Logo } from '@/components/HeaderBar';
 import { MetricCard } from '@/components/MetricCard';
-import { BodyLanguagePills, VoiceTonePills } from '@/components/SignalPills';
+import { SignalModal } from '@/components/SignalModal';
 import { ChatBubble, type ChatBubbleType } from '@/components/ChatBubble';
 import { FinishModal } from '@/components/FinishModal';
 import { colors, radius, spacing, typography } from '@/lib/theme';
@@ -28,6 +28,7 @@ import { updateCaseStatus, getCase } from '@/lib/cases';
 import { useRecorder, uploadAudioAndTranscribe } from '@/lib/audio';
 import { useInterrogationStore } from '@/lib/store';
 import { getTactic } from '@/lib/tactics';
+import { getButtonLabel } from '@/lib/signalButtons';
 import type { Case, Message, Session } from '@/lib/types';
 
 const PHASE_TR: Record<string, string> = {
@@ -70,6 +71,7 @@ export default function SessionScreen() {
 
   const { startRecording, stopRecording, cancelRecording } = useRecorder();
 
+  const [signalModalOpen, setSignalModalOpen] = useState(false);
   const [caseRow, setCaseRow] = useState<Case | null>(null);
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [lastAiMessageId, setLastAiMessageId] = useState<string | null>(null);
@@ -374,20 +376,6 @@ export default function SessionScreen() {
         <MetricCard label="TUTARSIZLIK" value={session.inconsistency_score} />
       </View>
 
-{/* Sinyal panelleri (read-only modda gizli) */}
-      {!isReadOnly ? (
-        <View>
-          <BodyLanguagePills
-            selected={selectedBodyLanguage}
-            onToggle={toggleBodyLanguage}
-          />
-          <VoiceTonePills
-            selected={selectedVoiceTone}
-            onToggle={toggleVoiceTone}
-          />
-        </View>
-      ) : null}
-
       {/* Chat alanı */}
       <ScrollView
         ref={scrollRef}
@@ -404,6 +392,19 @@ export default function SessionScreen() {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Seçili sinyal özeti — sadece seçim varsa göster */}
+      {!isReadOnly && (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) ? (
+        <View style={styles.signalStrip}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signalStripRow}>
+            {[...selectedBodyLanguage, ...selectedVoiceTone].map((key) => (
+              <View key={key} style={styles.signalBadge}>
+                <Text style={styles.signalBadgeText}>{getButtonLabel(key)}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
 
       {/* Alt aksiyon barı */}
       {!isReadOnly ? (
@@ -432,6 +433,27 @@ export default function SessionScreen() {
               ]}
             />
             <Text style={styles.micIcon}>{isRecording ? '■' : '●'}</Text>
+          </Pressable>
+
+          {/* Sinyal seç butonu */}
+          <Pressable
+            onPress={() => setSignalModalOpen(true)}
+            disabled={isProcessing}
+            style={({ pressed }) => [
+              styles.signalButton,
+              (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) && styles.signalButtonActive,
+              pressed && { opacity: 0.85 },
+              isProcessing && { opacity: 0.5 },
+            ]}
+          >
+            <Text style={[
+              styles.signalButtonText,
+              (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) && styles.signalButtonTextActive,
+            ]}>
+              {(selectedBodyLanguage.length + selectedVoiceTone.length) > 0
+                ? `SİNYAL (${selectedBodyLanguage.length + selectedVoiceTone.length})`
+                : 'SİNYAL'}
+            </Text>
           </Pressable>
 
           <Pressable
@@ -465,6 +487,15 @@ export default function SessionScreen() {
         onComplete={onComplete}
         onExitForNow={onExitForNow}
         busy={finishBusy}
+      />
+
+      <SignalModal
+        visible={signalModalOpen}
+        onClose={() => setSignalModalOpen(false)}
+        selectedBodyLanguage={selectedBodyLanguage}
+        selectedVoiceTone={selectedVoiceTone}
+        onToggleBodyLanguage={toggleBodyLanguage}
+        onToggleVoiceTone={toggleVoiceTone}
       />
     </View>
   );
@@ -541,6 +572,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     gap: 6,
+  },
+
+  signalStrip: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingVertical: 6,
+  },
+  signalStripRow: {
+    paddingHorizontal: spacing.lg,
+    gap: 6,
+    flexDirection: 'row',
+  },
+  signalBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(224, 82, 82, 0.12)',
+    borderWidth: 1,
+    borderColor: colors.brandRed,
+  },
+  signalBadgeText: {
+    ...typography.labelCaps,
+    color: colors.brandRed,
+    fontSize: 9,
+  },
+
+  signalButton: {
+    height: 56,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  signalButtonActive: {
+    borderColor: colors.brandRed,
+    backgroundColor: 'rgba(224, 82, 82, 0.1)',
+  },
+  signalButtonText: {
+    ...typography.labelCaps,
+    color: colors.textSecondary,
+    fontSize: 10,
+  },
+  signalButtonTextActive: {
+    color: colors.brandRed,
   },
 
   chat: { flex: 1 },
