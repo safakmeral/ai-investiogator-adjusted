@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Camera } from 'react-native-vision-camera';
 
 import { HeaderBar, Logo } from '@/components/HeaderBar';
 import { MetricCard } from '@/components/MetricCard';
-import { SignalModal } from '@/components/SignalModal';
 import { ChatBubble, type ChatBubbleType } from '@/components/ChatBubble';
 import { FinishModal } from '@/components/FinishModal';
 import { colors, radius, spacing, typography } from '@/lib/theme';
@@ -27,9 +27,14 @@ import {
 import { updateCaseStatus, getCase } from '@/lib/cases';
 import { useRecorder, uploadAudioAndTranscribe } from '@/lib/audio';
 import { useInterrogationStore } from '@/lib/store';
-import { getTactic } from '@/lib/tactics';
-import { getButtonLabel } from '@/lib/signalButtons';
-import type { Case, Message, Session } from '@/lib/types';
+import { getSignalLabel } from '@/lib/signalButtons';
+import { useCameraCapture } from '@/lib/cameraCapture';
+import { analyzeVoiceTone } from '@/lib/bodyLanguageAnalysis';
+import { analysisSocket } from '@/lib/analysisSocket';
+import type { Case, Message } from '@/lib/types';
+
+const PYTHON_SERVICE_URL =
+  process.env.EXPO_PUBLIC_PYTHON_SERVICE_URL ?? 'http://localhost:8001';
 
 const PHASE_TR: Record<string, string> = {
   opening: 'Başlangıç',
@@ -57,11 +62,6 @@ export default function SessionScreen() {
   const {
     session,
     setSession,
-    selectedBodyLanguage,
-    selectedVoiceTone,
-    toggleBodyLanguage,
-    toggleVoiceTone,
-    clearSignals,
     isRecording,
     setRecording,
     isProcessing,
@@ -70,15 +70,30 @@ export default function SessionScreen() {
   } = useInterrogationStore();
 
   const { startRecording, stopRecording, cancelRecording } = useRecorder();
+  const {
+    cameraRef,
+    device: cameraDevice,
+    hasCameraPermission,
+    requestPermission: requestCameraPermission,
+    isCapturing,
+    startCapture,
+    stopCapture,
+  } = useCameraCapture();
 
-  const [signalModalOpen, setSignalModalOpen] = useState(false);
   const [caseRow, setCaseRow] = useState<Case | null>(null);
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [lastAiMessageId, setLastAiMessageId] = useState<string | null>(null);
   const [pendingTranscript, setPendingTranscript] = useState<{
     text: string;
     audioPath: string;
+    localUri: string;
   } | null>(null);
+  const [detectedSignals, setDetectedSignals] = useState<{
+    bodyLanguage: string[];
+    voiceTone: string[];
+  }>({ bodyLanguage: [], voiceTone: [] });
+  const bodyLanguageSetRef = useRef<Set<string>>(new Set());
+  const [analyzing, setAnalyzing] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
   const [finishBusy, setFinishBusy] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
@@ -110,6 +125,9 @@ export default function SessionScreen() {
         return;
       }
       try {
+        // Kamera iznini erkenden iste (kullanıcı mikrofon butonuna basmadan)
+        requestCameraPermission().catch(() => {});
+
         const [c, sess] = await Promise.all([getCase(caseId), getOrCreateSession(caseId)]);
         if (cancelled) return;
         if (!c) {
@@ -119,7 +137,6 @@ export default function SessionScreen() {
         setCaseRow(c);
 
         if (c.status === 'closed') {
-          // Kapalı vakalarda sadece okuma
           const msgs = await getMessages(sess.id);
           setSession(sess);
           setLastAiMessageId(msgs[msgs.length - 1]?.id ?? null);
@@ -129,7 +146,6 @@ export default function SessionScreen() {
 
         let msgs = await getMessages(sess.id);
         if (msgs.length === 0) {
-          // İlk hamleyi üret
           setProcessing(true);
           try {
             const { message, move } = await generateOpeningMove(sess.id);
@@ -157,13 +173,39 @@ export default function SessionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
-  // Sayfa unmount: store'u temizle (sonraki açılışta karışmasın)
   useEffect(() => {
     return () => {
       cancelRecording().catch(() => {});
       reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---------------------------------------------------------------------
+  // Python analiz servisi (WebSocket) — canlı sinyal akışı
+  // ---------------------------------------------------------------------
+  useEffect(() => {
+    analysisSocket.connect(PYTHON_SERVICE_URL);
+    const off = analysisSocket.onAnalysis((bodyLanguage) => {
+      // Sinyalleri biriktir; aynı sinyal birden fazla frame'de gelirse tekrar etmesin
+      let changed = false;
+      for (const s of bodyLanguage) {
+        if (!bodyLanguageSetRef.current.has(s)) {
+          bodyLanguageSetRef.current.add(s);
+          changed = true;
+        }
+      }
+      if (changed) {
+        setDetectedSignals((prev) => ({
+          ...prev,
+          bodyLanguage: Array.from(bodyLanguageSetRef.current),
+        }));
+      }
+    });
+    return () => {
+      off();
+      analysisSocket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -173,26 +215,45 @@ export default function SessionScreen() {
   }, [chatItems]);
 
   // ---------------------------------------------------------------------
-  // Ses kaydı
+  // Ses kaydı + kamera (paralel) — kayıt biterken analiz çağrıları
   // ---------------------------------------------------------------------
   const onMicPress = useCallback(async () => {
-    if (!session) return;
+    if (!session || !caseRow) return;
+
     if (isRecording) {
+      // === DURDUR ===
       try {
+        // 1) Ses kaydını durdur, 2) kamerayı durdur, 3) Python'a recording_stop bildir
         const result = await stopRecording();
+        stopCapture();
+        analysisSocket.sendRecordingStop();
         setRecording(false);
         setProcessing(true);
-        const { audioPath, transcript } = await uploadAudioAndTranscribe({
+        setAnalyzing(true);
+
+        // Beden dili artık canlı geldi (analysisSocket); burada sadece
+        // transkripsiyon + ses tonu gerekiyor — paralel
+        const [transcribeRes, voiceTone] = await Promise.all([
+          uploadAudioAndTranscribe({
+            localUri: result.uri,
+            sessionId: session.id,
+            sequenceNo: session.question_count,
+          }),
+          analyzeVoiceTone(result.uri),
+        ]);
+
+        setPendingTranscript({
+          text: transcribeRes.transcript,
+          audioPath: transcribeRes.audioPath,
           localUri: result.uri,
-          sessionId: session.id,
-          sequenceNo: session.question_count,
         });
-        setPendingTranscript({ text: transcript, audioPath });
-        // Şüpheli baloncuğunu hemen göster (şeffaf bilgi)
-        if (transcript) {
+        setDetectedSignals((prev) => ({ ...prev, voiceTone }));
+        analysisSocket.sendVoiceResult(voiceTone);
+
+        if (transcribeRes.transcript) {
           setChatItems((prev) => [
             ...prev,
-            { id: `pending-${Date.now()}`, type: 'suspect', content: transcript },
+            { id: `pending-${Date.now()}`, type: 'suspect', content: transcribeRes.transcript },
           ]);
         }
       } catch (err) {
@@ -200,19 +261,55 @@ export default function SessionScreen() {
         Alert.alert('Kayıt hatası', err instanceof Error ? err.message : 'Bilinmeyen');
       } finally {
         setProcessing(false);
+        setAnalyzing(false);
       }
     } else {
+      // === BAŞLAT ===
       try {
+        if (!hasCameraPermission) {
+          const granted = await requestCameraPermission();
+          if (!granted) {
+            Alert.alert(
+              'Kamera izni gerekli',
+              'Beden dili analizi için kamera erişimi gereklidir.',
+            );
+            return;
+          }
+        }
         await startRecording();
         setRecording(true);
+
+        // Yeni soru için canlı beden dili sinyal birikimini sıfırla
+        bodyLanguageSetRef.current = new Set();
+        setDetectedSignals({ bodyLanguage: [], voiceTone: [] });
+
+        const meta = {
+          sessionId: session.id,
+          suspectName: `${caseRow.suspect_name} ${caseRow.suspect_surname}`,
+          caseCode: caseRow.case_code,
+        };
+        analysisSocket.sendRecordingStart(meta);
+        startCapture(meta);
       } catch (err) {
         Alert.alert('Mikrofon hatası', err instanceof Error ? err.message : 'Bilinmeyen');
       }
     }
-  }, [isRecording, session, setRecording, setProcessing]);
+  }, [
+    isRecording,
+    session,
+    caseRow,
+    setRecording,
+    setProcessing,
+    startRecording,
+    stopRecording,
+    startCapture,
+    stopCapture,
+    hasCameraPermission,
+    requestCameraPermission,
+  ]);
 
   // ---------------------------------------------------------------------
-  // SORU ÜRET — tam akış
+  // SORU ÜRET — otomatik tespit edilen sinyalleri kullan
   // ---------------------------------------------------------------------
   const onGenerateMove = useCallback(async () => {
     if (!session || !lastAiMessageId || !pendingTranscript) return;
@@ -223,22 +320,18 @@ export default function SessionScreen() {
         previousMessageId: lastAiMessageId,
         answerText: pendingTranscript.text,
         answerAudioUrl: pendingTranscript.audioPath,
-        bodyLanguage: selectedBodyLanguage,
-        voiceTone: selectedVoiceTone,
+        bodyLanguage: detectedSignals.bodyLanguage,
+        voiceTone: detectedSignals.voiceTone,
       });
 
-      // chat akışını güncelle
       setChatItems((prev) => {
-        // 'pending-' ile eklediğimiz baloncuğu kalıcı baloncukla değiştir
         const filtered = prev.filter((c) => !c.id.startsWith('pending-'));
         const additions: ChatItem[] = [];
-        // Önceki AI mesajına verilen şüpheli cevabı (kalıcı):
         additions.push({
           id: `${lastAiMessageId}-answer`,
           type: 'suspect',
           content: pendingTranscript.text,
         });
-        // Çelişki / tutarsızlık bildirimleri (yeni hamlenin analiz çıktısından)
         for (const c of result.newMove.analysis.contradictions) {
           additions.push({
             id: `alert-${additions.length}-${Date.now()}`,
@@ -246,7 +339,6 @@ export default function SessionScreen() {
             content: c.message,
           });
         }
-        // Stres / kırılma uyarısı
         if (result.signal?.is_breaking_point) {
           additions.push({
             id: `stress-${Date.now()}`,
@@ -254,7 +346,6 @@ export default function SessionScreen() {
             content: result.signal.meaning,
           });
         }
-        // Faz değişimi
         if (result.phaseChanged) {
           additions.push({
             id: `phase-${Date.now()}`,
@@ -262,7 +353,6 @@ export default function SessionScreen() {
             content: `Yeni faz: ${phaseToTurkish(result.newSession.current_phase)}`,
           });
         }
-        // Genel analiz notu (yorum varsa)
         if (result.newMove.analysis.strategic_note) {
           additions.push({
             id: `note-${Date.now()}`,
@@ -270,7 +360,6 @@ export default function SessionScreen() {
             content: result.newMove.analysis.strategic_note,
           });
         }
-        // Yeni AI hamlesi
         additions.push({
           id: result.newAiMessage.id,
           type: 'ai',
@@ -284,7 +373,8 @@ export default function SessionScreen() {
       setSession(result.newSession);
       setLastAiMessageId(result.newAiMessage.id);
       setPendingTranscript(null);
-      clearSignals();
+      bodyLanguageSetRef.current = new Set();
+      setDetectedSignals({ bodyLanguage: [], voiceTone: [] });
     } catch (err) {
       Alert.alert('Hata', err instanceof Error ? err.message : 'Bilinmeyen');
     } finally {
@@ -294,11 +384,9 @@ export default function SessionScreen() {
     session,
     lastAiMessageId,
     pendingTranscript,
-    selectedBodyLanguage,
-    selectedVoiceTone,
+    detectedSignals,
     setSession,
     setProcessing,
-    clearSignals,
   ]);
 
   // ---------------------------------------------------------------------
@@ -351,6 +439,8 @@ export default function SessionScreen() {
     caseRow.status === 'open';
 
   const isReadOnly = caseRow.status === 'closed';
+  const showCameraPreview = isCapturing && hasCameraPermission && !!cameraDevice;
+  const allDetected = [...detectedSignals.bodyLanguage, ...detectedSignals.voiceTone];
 
   return (
     <View style={styles.flex}>
@@ -388,21 +478,41 @@ export default function SessionScreen() {
         {isProcessing ? (
           <View style={styles.processing}>
             <ActivityIndicator color={colors.brandBlue} />
-            <Text style={styles.processingText}>İşleniyor...</Text>
+            <Text style={styles.processingText}>
+              {analyzing ? 'Otomatik sinyal analizi yapılıyor...' : 'İşleniyor...'}
+            </Text>
           </View>
         ) : null}
       </ScrollView>
 
-      {/* Seçili sinyal özeti — sadece seçim varsa göster */}
-      {!isReadOnly && (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) ? (
+      {/* Otomatik tespit edilen sinyaller — soru üretilmeden önce ön izleme */}
+      {!isReadOnly && allDetected.length > 0 ? (
         <View style={styles.signalStrip}>
+          <Text style={styles.signalStripTitle}>OTOMATİK TESPİT:</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signalStripRow}>
-            {[...selectedBodyLanguage, ...selectedVoiceTone].map((key) => (
+            {allDetected.map((key) => (
               <View key={key} style={styles.signalBadge}>
-                <Text style={styles.signalBadgeText}>{getButtonLabel(key)}</Text>
+                <Text style={styles.signalBadgeText}>{getSignalLabel(key)}</Text>
               </View>
             ))}
           </ScrollView>
+        </View>
+      ) : null}
+
+      {/* Kamera önizlemesi — sadece kayıt sırasında */}
+      {showCameraPreview && cameraDevice ? (
+        <View style={styles.cameraPreviewContainer} pointerEvents="none">
+          <Camera
+            ref={cameraRef}
+            style={styles.cameraPreview}
+            device={cameraDevice}
+            isActive={true}
+            photo={true}
+          />
+          <View style={styles.cameraOverlay}>
+            <View style={styles.cameraDot} />
+            <Text style={styles.cameraText}>ANALİZ</Text>
+          </View>
         </View>
       ) : null}
 
@@ -433,27 +543,6 @@ export default function SessionScreen() {
               ]}
             />
             <Text style={styles.micIcon}>{isRecording ? '■' : '●'}</Text>
-          </Pressable>
-
-          {/* Sinyal seç butonu */}
-          <Pressable
-            onPress={() => setSignalModalOpen(true)}
-            disabled={isProcessing}
-            style={({ pressed }) => [
-              styles.signalButton,
-              (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) && styles.signalButtonActive,
-              pressed && { opacity: 0.85 },
-              isProcessing && { opacity: 0.5 },
-            ]}
-          >
-            <Text style={[
-              styles.signalButtonText,
-              (selectedBodyLanguage.length > 0 || selectedVoiceTone.length > 0) && styles.signalButtonTextActive,
-            ]}>
-              {(selectedBodyLanguage.length + selectedVoiceTone.length) > 0
-                ? `SİNYAL (${selectedBodyLanguage.length + selectedVoiceTone.length})`
-                : 'SİNYAL'}
-            </Text>
           </Pressable>
 
           <Pressable
@@ -488,22 +577,10 @@ export default function SessionScreen() {
         onExitForNow={onExitForNow}
         busy={finishBusy}
       />
-
-      <SignalModal
-        visible={signalModalOpen}
-        onClose={() => setSignalModalOpen(false)}
-        selectedBodyLanguage={selectedBodyLanguage}
-        selectedVoiceTone={selectedVoiceTone}
-        onToggleBodyLanguage={toggleBodyLanguage}
-        onToggleVoiceTone={toggleVoiceTone}
-      />
     </View>
   );
 }
 
-// ---------------------------------------------------------------------
-// Yardımcı: messages → ChatItem[]
-// ---------------------------------------------------------------------
 function buildChatFromMessages(messages: Message[]): ChatItem[] {
   const items: ChatItem[] = [];
   for (const m of messages) {
@@ -513,7 +590,6 @@ function buildChatFromMessages(messages: Message[]): ChatItem[] {
       content: m.question,
       tactic: m.tactic_used ?? undefined,
     });
-    // Bu AI mesajının analiz notları (içerikteki çelişkiler, vb.)
     if (m.analysis_notes) {
       const notes = m.analysis_notes as { contradictions?: Array<{ type: string; message: string }> };
       for (const c of notes?.contradictions ?? []) {
@@ -524,7 +600,6 @@ function buildChatFromMessages(messages: Message[]): ChatItem[] {
         });
       }
     }
-    // Şüpheli cevabı (varsa)
     if (m.answer) {
       items.push({
         id: `${m.id}-answer`,
@@ -580,6 +655,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingVertical: 6,
   },
+  signalStripTitle: {
+    ...typography.labelCaps,
+    color: colors.textSecondary,
+    fontSize: 8,
+    paddingHorizontal: spacing.lg,
+    marginBottom: 4,
+  },
   signalStripRow: {
     paddingHorizontal: spacing.lg,
     gap: 6,
@@ -599,27 +681,45 @@ const styles = StyleSheet.create({
     fontSize: 9,
   },
 
-  signalButton: {
-    height: 56,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  signalButtonActive: {
+  cameraPreviewContainer: {
+    position: 'absolute',
+    top: 100,
+    right: 12,
+    width: 100,
+    height: 140,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
     borderColor: colors.brandRed,
-    backgroundColor: 'rgba(224, 82, 82, 0.1)',
+    backgroundColor: '#000',
+    zIndex: 10,
   },
-  signalButtonText: {
-    ...typography.labelCaps,
-    color: colors.textSecondary,
-    fontSize: 10,
+  cameraPreview: {
+    flex: 1,
   },
-  signalButtonTextActive: {
-    color: colors.brandRed,
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  cameraDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.brandRed,
+  },
+  cameraText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
 
   chat: { flex: 1 },

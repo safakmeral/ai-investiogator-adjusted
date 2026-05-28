@@ -12,7 +12,7 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Sorgu sırasında şüpheli cevaplarını kaydetmek için mikrofon erişimi gereklidir.",
         "NSPhotoLibraryUsageDescription": "Şüpheli fotoğrafı eklemek için galeriye erişim gereklidir.",
-        "NSCameraUsageDescription": "Şüpheli fotoğrafı çekmek için kamera erişimi gereklidir."
+        "NSCameraUsageDescription": "Sorgu sırasında şüphelinin beden dili analizi için kamera erişimi gereklidir."
       }
     },
     "android": {
@@ -36,6 +36,14 @@
         "expo-image-picker",
         {
           "photosPermission": "Şüpheli fotoğrafı eklemek için galeriye erişim gereklidir."
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Sorgu sırasında şüphelinin beden dili analizi için kamera erişimi gereklidir.",
+          "enableMicrophonePermission": false,
+          "enableCodeScanner": false
         }
       ],
       "expo-asset"

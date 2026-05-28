@@ -38,10 +38,6 @@ interface InterrogationState {
   session: Session | null;
   messages: Message[];
 
-  // Polis o anki cevaba dair beden dili / ses tonu seçimleri
-  selectedBodyLanguage: string[];
-  selectedVoiceTone: string[];
-
   // Kayıt akışı
   isRecording: boolean;
   isUploading: boolean;
@@ -56,10 +52,6 @@ interface InterrogationState {
   appendMessage: (m: Message) => void;
   updateMessage: (id: string, patch: Partial<Message>) => void;
 
-  toggleBodyLanguage: (key: string) => void;
-  toggleVoiceTone: (key: string) => void;
-  clearSignals: () => void;
-
   setRecording: (v: boolean) => void;
   setUploading: (v: boolean) => void;
   setProcessing: (v: boolean) => void;
@@ -71,8 +63,6 @@ interface InterrogationState {
 const initialInterrogation = {
   session: null,
   messages: [],
-  selectedBodyLanguage: [],
-  selectedVoiceTone: [],
   isRecording: false,
   isUploading: false,
   isProcessing: false,
@@ -95,24 +85,6 @@ export const useInterrogationStore = create<InterrogationState>((set, get) => ({
     set({
       messages: get().messages.map((m) => (m.id === id ? { ...m, ...patch } : m)),
     }),
-
-  toggleBodyLanguage: (key) => {
-    const cur = get().selectedBodyLanguage;
-    set({
-      selectedBodyLanguage: cur.includes(key)
-        ? cur.filter((k) => k !== key)
-        : [...cur, key],
-    });
-  },
-  toggleVoiceTone: (key) => {
-    const cur = get().selectedVoiceTone;
-    set({
-      selectedVoiceTone: cur.includes(key)
-        ? cur.filter((k) => k !== key)
-        : [...cur, key],
-    });
-  },
-  clearSignals: () => set({ selectedBodyLanguage: [], selectedVoiceTone: [] }),
 
   setRecording: (v) => set({ isRecording: v }),
   setUploading: (v) => set({ isUploading: v }),

@@ -1,16 +1,13 @@
 // =====================================================================
-// Sinyal Yorumlama Katmanı (AI_Investigator_v4.md §5.6)
-// Beden dili + ses tonu kombinasyonlarını anlamsal taktik önerisine çevirir.
-// 3 hatalı taktik referansı düzeltildi:
-//   empathy_switch → feigned_sympathy
-//   detail_trap    → story_locking
-//   exploit_weakness → kalır (15. taktik olarak eklendi)
+// Sinyal Yorumlama Katmanı
+// Otomatik tespit edilen beden dili + ses tonu kombinasyonlarını anlamsal
+// taktik önerisine çevirir.
 // =====================================================================
 
 import {
   BODY_LANGUAGE_MAP,
   VOICE_TONE_MAP,
-  getButtonLabel,
+  getSignalLabel,
 } from './signalButtons';
 import type { SignalInterpretation } from './types';
 
@@ -20,62 +17,85 @@ interface SignalMeaning {
   suggested_tactic: string;
 }
 
-// Spesifik kombinasyon haritası
+// Yeni otomatik sinyal kombinasyonları
 export const signalMeaningMap: Record<string, SignalMeaning> = {
-  'dudak_ısırma+sesi_titredi': {
-    meaning:
-      'Yüksek korku + bilgi gizleme refleksi. Şüpheli bu spesifik noktada kırılıyor.',
-    tactical_implication: 'Bu cevabın üzerine git. Şüpheli bu konuda savunmasız.',
+  'korku_ifadesi+göz_kaçırma': {
+    meaning: 'Korku altında kaçınma. Şüpheli bu konuda savunmasız ve doğrudan göz temasından kaçınıyor.',
+    tactical_implication: 'Baskıyı artır, bu konuya odaklan.',
     suggested_tactic: 'exploit_weakness',
   },
-  'ani_sakinleşti+eller_masada_sabit': {
-    meaning:
-      'Kontrollü yanıltma. Şüpheli duygularını bastırıyor, hikaye önceden hazırlanmış.',
-    tactical_implication:
-      'Sakinlik gerçek değil. Detay tuzağı kur, hazırlanmadığı noktalara gir.',
-    suggested_tactic: 'story_locking',
+  'korku_ifadesi+sesi_titredi': {
+    meaning: 'Korku kırılma noktası. Yüksek stres + ses titremesi açık zayıflık sinyali.',
+    tactical_implication: 'Bu cevabın üzerine git, şüpheli kırılmak üzere.',
+    suggested_tactic: 'exploit_weakness',
   },
-  'kolları_kavuşturdu+göz_kaçırma': {
-    meaning: 'Savunmaya çekildi. Doğrudan baskı şu an işe yaramaz, duvar örüyor.',
-    tactical_implication: 'Baskıyı bırak. Empati köprüsü kur, güven oluştur.',
-    suggested_tactic: 'feigned_sympathy',
+  'öfke_ifadesi+kolları_kavuşturdu': {
+    meaning: 'Savunmacı düşmanlık. Şüpheli kapanıyor, doğrudan baskı duvar örecek.',
+    tactical_implication: 'Önce gerilimi düşür, sonra yumuşak baskı uygula.',
+    suggested_tactic: 'tactical_break',
   },
-  'duygusallaştı+sesi_titredi': {
-    meaning: 'Duygusal kırılma. Vicdan azabı veya korku yüzeye çıkıyor.',
-    tactical_implication: 'Suçlamayı bırak. Şüphelinin insani tarafına git, itirafı kolaylaştır.',
+  'kıpırdanma+yüze_el_götürme': {
+    meaning: 'Aldatıcı huzursuzluk. Bilinçdışı engelleme refleksi + sürekli hareket.',
+    tactical_implication: 'Doğrudan yüzleştir, detay sorularıyla sıkıştır.',
+    suggested_tactic: 'cognitive_overload',
+  },
+  'üzgün_ifade+cevap_zorlandı': {
+    meaning: 'Suçluluk + tereddüt. Vicdan azabı yüzeye çıkıyor, cevap aramakta zorlanıyor.',
+    tactical_implication: 'Empati köprüsü kur, itirafı kolaylaştır.',
     suggested_tactic: 'minimization',
   },
-  'sinirlendi+sesi_yükseldi': {
-    meaning: 'Savunmacı saldırı. Köşeye sıkıştığını hissediyor, kontrol kaybediyor.',
-    tactical_implication: 'Sakin kal, baskıyı düşür. Öfke geçince boşluktan gir.',
+  'göz_kaçırma+dudak_ısırma': {
+    meaning: 'Gizleme girişimi. Bilgiyi tutuyor, dudak ısırma bilinçdışı engelleme refleksi.',
+    tactical_implication: 'Spesifik detaylara odaklan, hazırlanmadığı noktayı zorla.',
+    suggested_tactic: 'exploit_weakness',
+  },
+  'sesi_yükseldi+öne_eğilme': {
+    meaning: 'Saldırgan savunma. Şüpheli köşeye sıkıştığını hissediyor.',
+    tactical_implication: 'Sakin kal, soruyu tekrarla. Öfke geçtiğinde boşluktan gir.',
+    suggested_tactic: 'tactical_break',
+  },
+  'fısıldadı+üzgün_ifade': {
+    meaning: 'Duygusal çöküş. İçe çekilme + hüzün — itiraf eşiğine yaklaşıyor.',
+    tactical_implication: 'Suçlamayı bırak, insani tarafına git.',
+    suggested_tactic: 'minimization',
+  },
+  'eller_masada_sabit+arkasına_yaslanma': {
+    meaning: 'Kontrollü cevap. Şüpheli duygularını bastırıyor, hikaye önceden hazırlanmış.',
+    tactical_implication: 'Detay tuzağı kur, hazırlanmadığı noktalara gir.',
+    suggested_tactic: 'story_locking',
+  },
+  'korku_ifadesi+cevap_zorlandı': {
+    meaning: 'Yüksek stres altında bilgiye erişim zorluğu. Yalan üretmekte zorlanıyor.',
+    tactical_implication: 'Sessizlikle bekle, cevabı düşünmesi için zaman bırakma.',
+    suggested_tactic: 'silence_pressure',
+  },
+  'öfke_ifadesi+sesi_yükseldi': {
+    meaning: 'Açık öfke patlaması. Kontrol kaybediyor, savunmacı.',
+    tactical_implication: 'Provokasyona düşme, sakin tonla devam et.',
     suggested_tactic: 'tactical_break',
   },
 };
 
-// Bölüm 5.5 — yüksek stres kombinasyonları (kırılma noktası bayrağı)
+// Yüksek stres kombinasyonları — kırılma noktası bayrağı
 const BREAKING_POINT_PATTERNS: string[][] = [
-  ['dudak_ısırma', 'sesi_yükseldi', 'kıpırdanma'],
-  ['yüze_el_götürme', 'sesi_titredi'],
-  ['gözleri_sık_kırpma', 'titreme'],
+  ['korku_ifadesi', 'sesi_titredi'],
+  ['üzgün_ifade', 'cevap_zorlandı', 'göz_kaçırma'],
+  ['kıpırdanma', 'yüze_el_götürme', 'sesi_titredi'],
+  ['korku_ifadesi', 'cevap_zorlandı'],
 ];
 
 function detectBreakingPoint(signals: string[]): boolean {
-  // Spesifik desenler
   for (const pat of BREAKING_POINT_PATTERNS) {
     if (pat.every((s) => signals.includes(s))) return true;
   }
-  // 3+ yüksek ağırlıklı (≥0.7) sinyal
+  // 3+ yüksek ağırlıklı (≥0.65) sinyal
   const highCount = signals.filter((s) => {
     const w = BODY_LANGUAGE_MAP[s]?.weight ?? VOICE_TONE_MAP[s]?.weight ?? 0;
-    return w >= 0.7;
+    return w >= 0.65;
   }).length;
   return highCount >= 3;
 }
 
-/**
- * Kombinasyon eşleşmesi için tüm beden dili x ses tonu permütasyonlarını dener.
- * Bulamazsa ilk yüksek ağırlıklı sinyale göre genel yorum üretir.
- */
 export function interpretSignals(
   bodyLanguage: string[],
   voiceTone: string[],
@@ -122,7 +142,7 @@ export function interpretSignals(
 
   if (topWeight >= 0.7) {
     return {
-      meaning: `Belirgin stres sinyali: ${getButtonLabel(topKey)}. Şüpheli huzursuz.`,
+      meaning: `Belirgin stres sinyali: ${getSignalLabel(topKey)}. Şüpheli huzursuz.`,
       tactical_implication:
         'Konuyu bırakma, baskıyı koru ama analitik sorularla derinleştir.',
       suggested_tactic: isBreaking ? 'exploit_weakness' : 'cognitive_overload',
@@ -143,7 +163,7 @@ export function interpretSignals(
   }
 
   return {
-    meaning: `Orta düzey gözlem: ${getButtonLabel(topKey)}.`,
+    meaning: `Orta düzey gözlem: ${getSignalLabel(topKey)}.`,
     tactical_implication: 'Mevcut taktiğe devam et, sinyalleri izlemeye al.',
     suggested_tactic: 'funnel_technique',
     signals: all,
@@ -152,7 +172,7 @@ export function interpretSignals(
 }
 
 /**
- * Polis stres ham skoru (0-1) — Bölüm 5.2 formülü:
+ * Polis stres ham skoru (0-1):
  *   max(weights) * 0.6 + mean(weights) * 0.4
  * Negatif ağırlıklar (eller masada sabit) skoru düşürür.
  */
@@ -164,12 +184,11 @@ export function computePoliceStress(signals: string[]): number {
   const max = Math.max(...weights);
   const mean = weights.reduce((a, b) => a + b, 0) / weights.length;
   const raw = max * 0.6 + mean * 0.4;
-  // 0..1 aralığına sıkıştır
   return Math.max(0, Math.min(1, raw));
 }
 
 /**
- * Sinyal blokunu prompt'a koymak için metne dönüştürür (§5.6).
+ * Sinyal blokunu prompt'a koymak için metne dönüştürür.
  */
 export function formatSignalBlockForPrompt(
   interpretation: SignalInterpretation | null,
@@ -178,11 +197,11 @@ export function formatSignalBlockForPrompt(
   if (!interpretation) {
     return `[SİNYAL ANALİZİ]\nCevap: "${answerText}"\nGözlemlenen sinyal yok.`;
   }
-  const labels = interpretation.signals.map(getButtonLabel).join(', ');
+  const labels = interpretation.signals.map(getSignalLabel).join(', ');
   return [
-    '[SİNYAL ANALİZİ — bu cevaba özgü]',
+    '[SİNYAL ANALİZİ — bu cevaba özgü, otomatik tespit]',
     '',
-    'Şüpheli şu cevabı verirken bu sinyaller gözlemlendi:',
+    'Şüpheli şu cevabı verirken kamera + ses analizi şu sinyalleri tespit etti:',
     `Cevap: "${answerText}"`,
     `Gözlemlenen sinyaller: ${labels}`,
     `Kombinasyon anlamı: ${interpretation.meaning}`,

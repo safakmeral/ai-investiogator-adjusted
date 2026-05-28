@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Investigator — Canlı Analiz Paneli</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-alt: #1c232c;
+    --border: #2a3441;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #4f6ef7;
+    --red: #e05252;
+    --green: #3fb950;
+    --glow: 0 0 16px rgba(224, 82, 82, 0.65);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 14px;
+    color: var(--blue);
+  }
+  .meta {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .meta .label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 9px;
+    margin-right: 6px;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--border);
+  }
+  .status .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .status.connected .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status.recording .dot { background: var(--red); box-shadow: 0 0 6px var(--red); animation: pulse 1.2s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 16px 24px;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel h2 {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-body {
+    flex: 1;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  /* Video panel */
+  .video-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    position: relative;
+    min-height: 360px;
+  }
+  .video-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+  }
+  .video-placeholder {
+    color: var(--muted);
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .video-placeholder .icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+
+  /* Signal columns */
+  .signals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .signals-col h3 {
+    margin: 0 0 10px 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+  .signal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    transition: all 0.25s ease;
+  }
+  .signal .name {
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  .signal .count {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 10px;
+    border-radius: 10px;
+    min-width: 32px;
+    text-align: center;
+    transition: all 0.25s ease;
+  }
+  .signal.active {
+    border-color: var(--red);
+    background: rgba(224, 82, 82, 0.12);
+    box-shadow: var(--glow);
+  }
+  .signal.active .name { color: #fff; font-weight: 600; }
+  .signal.active .count { color: var(--red); background: rgba(0, 0, 0, 0.4); }
+
+  footer {
+    padding: 8px 24px;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 980px) {
+    main { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">AI INVESTIGATOR · CANLI ANALİZ</div>
+  <div class="meta">
+    <div><span class="label">Şüpheli</span><span id="suspectName">—</span></div>
+    <div><span class="label">Vaka</span><span id="caseCode">—</span></div>
+    <div class="status" id="connStatus"><span class="dot"></span><span id="connText">Bağlantı yok</span></div>
+    <div class="status" id="recStatus"><span class="dot"></span><span id="recText">Kayıt bekleniyor</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Canlı Görüntü · MediaPipe</h2>
+    <div class="video-wrap" id="videoWrap">
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="icon">📷</div>
+        <div>Kayıt başladığında görüntü buraya gelecek</div>
+      </div>
+      <img id="videoImg" style="display:none" alt="" />
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Tespit Edilen Sinyaller</h2>
+    <div class="panel-body">
+      <div class="signals-grid">
+        <div class="signals-col">
+          <h3>Beden Dili</h3>
+          <div id="bodyList"></div>
+        </div>
+        <div class="signals-col">
+          <h3>Ses Tonu</h3>
+          <div id="voiceList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div id="debugLine">debug: —</div>
+  <div>WebSocket: <span id="wsUrl"></span></div>
+</footer>
+
+<script>
+(() => {
+  const BODY_SIGNALS = [
+    ["göz_kaçırma", "Göz Kaçırma"],
+    ["kıpırdanma", "Kıpırdanma"],
+    ["kolları_kavuşturdu", "Kolları Kavuşturdu"],
+    ["öne_eğilme", "Öne Eğilme"],
+    ["arkasına_yaslanma", "Arkasına Yaslanma"],
+    ["yüze_el_götürme", "Yüze El Götürme"],
+    ["eller_masada_sabit", "Eller Sabit"],
+    ["dudak_ısırma", "Dudak Isırma"],
+    ["korku_ifadesi", "Korku İfadesi"],
+    ["öfke_ifadesi", "Öfke İfadesi"],
+    ["üzgün_ifade", "Üzgün İfade"],
+  ];
+  const VOICE_SIGNALS = [
+    ["sesi_yükseldi", "Sesi Yükseldi"],
+    ["fısıldadı", "Fısıldadı"],
+    ["sesi_titredi", "Sesi Titredi"],
+    ["cevap_zorlandı", "Cevap Zorlandı"],
+  ];
+
+  const counts = {};
+  const activeTimers = {};
+  const lastActivatedAt = {};
+  const ACTIVE_GLOW_MS = 2500;
+  const EVENT_DEBOUNCE_MS = 2000;
+
+  function makeList(container, signals) {
+    signals.forEach(([key, label]) => {
+      counts[key] = 0;
+      const el = document.createElement("div");
+      el.className = "signal";
+      el.dataset.key = key;
+      el.innerHTML = `
+        <span class="name">${label}</span>
+        <span class="count" id="count-${key}">0</span>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  function activateSignal(key) {
+    const el = document.querySelector(`.signal[data-key="${CSS.escape(key)}"]`);
+    if (!el) return;
+    const now = Date.now();
+    // Aynı sinyal son EVENT_DEBOUNCE_MS içinde tetiklendiyse sayacı artırma
+    if (!lastActivatedAt[key] || (now - lastActivatedAt[key]) > EVENT_DEBOUNCE_MS) {
+      counts[key] = (counts[key] || 0) + 1;
+      const cnt = document.getElementById(`count-${key}`);
+      if (cnt) cnt.textContent = counts[key];
+    }
+    lastActivatedAt[key] = now;
+    el.classList.add("active");
+    if (activeTimers[key]) clearTimeout(activeTimers[key]);
+    activeTimers[key] = setTimeout(() => el.classList.remove("active"), ACTIVE_GLOW_MS);
+  }
+
+  function resetCounts() {
+    for (const k of Object.keys(counts)) {
+      counts[k] = 0;
+      lastActivatedAt[k] = 0;
+      const cnt = document.getElementById(`count-${k}`);
+      if (cnt) cnt.textContent = "0";
+      const el = document.querySelector(`.signal[data-key="${CSS.escape(k)}"]`);
+      if (el) el.classList.remove("active");
+    }
+  }
+
+  makeList(document.getElementById("bodyList"), BODY_SIGNALS);
+  makeList(document.getElementById("voiceList"), VOICE_SIGNALS);
+
+  // --- UI helpers
+  const connStatus = document.getElementById("connStatus");
+  const connText = document.getElementById("connText");
+  const recStatus = document.getElementById("recStatus");
+  const recText = document.getElementById("recText");
+  const videoImg = document.getElementById("videoImg");
+  const videoPlaceholder = document.getElementById("videoPlaceholder");
+  const suspectEl = document.getElementById("suspectName");
+  const caseEl = document.getElementById("caseCode");
+  const debugLine = document.getElementById("debugLine");
+  const wsUrlEl = document.getElementById("wsUrl");
+
+  function setConnected(on) {
+    if (on) { connStatus.classList.add("connected"); connText.textContent = "Bağlı"; }
+    else    { connStatus.classList.remove("connected"); connText.textContent = "Bağlantı yok"; }
+  }
+  function setRecording(on) {
+    if (on) { recStatus.classList.add("recording"); recText.textContent = "Kayıt aktif"; }
+    else    { recStatus.classList.remove("recording"); recText.textContent = "Kayıt bekleniyor";
+              videoImg.style.display = "none"; videoPlaceholder.style.display = ""; }
+  }
+  function showFrame(b64) {
+    videoImg.src = "data:image/jpeg;base64," + b64;
+    if (videoImg.style.display === "none") {
+      videoImg.style.display = "";
+      videoPlaceholder.style.display = "none";
+    }
+  }
+  function formatDebug(d) {
+    if (!d) return "—";
+    const parts = [];
+    if ("motion" in d) parts.push(`motion:${d.motion}`);
+    if ("yaw" in d)    parts.push(`yaw:${d.yaw}`);
+    if ("pitch" in d)  parts.push(`pitch:${d.pitch}`);
+    return parts.join("  ") || "—";
+  }
+
+  // --- WebSocket
+  let ws = null;
+  let reconnectTimer = null;
+  const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/dashboard`;
+  wsUrlEl.textContent = wsUrl;
+
+  function connect() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    try { ws = new WebSocket(wsUrl); }
+    catch (e) { scheduleReconnect(); return; }
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => { setConnected(false); scheduleReconnect(); };
+    ws.onerror = () => {};
+    ws.onmessage = (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      handle(msg);
+    };
+  }
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; connect(); }, 3000);
+  }
+
+  function handle(msg) {
+    switch (msg.type) {
+      case "session_info":
+        if (msg.suspectName) suspectEl.textContent = msg.suspectName;
+        if (msg.caseCode)    caseEl.textContent = "#" + msg.caseCode;
+        setRecording(!!msg.recording);
+        break;
+      case "session_event":
+        if (msg.event === "recording_start") {
+          if (msg.suspectName) suspectEl.textContent = msg.suspectName;
+          if (msg.caseCode)    caseEl.textContent = "#" + msg.caseCode;
+          resetCounts();
+          setRecording(true);
+        } else if (msg.event === "recording_stop") {
+          setRecording(false);
+        }
+        break;
+      case "analysis":
+        if (msg.frame) showFrame(msg.frame);
+        if (Array.isArray(msg.bodyLanguage)) {
+          msg.bodyLanguage.forEach(activateSignal);
+        }
+        debugLine.textContent = "debug: " + formatDebug(msg.debug);
+        break;
+      case "voice_result":
+        if (Array.isArray(msg.voiceTone)) {
+          msg.voiceTone.forEach(activateSignal);
+        }
+        break;
+    }
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>
