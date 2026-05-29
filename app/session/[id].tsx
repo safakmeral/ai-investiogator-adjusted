@@ -8,7 +8,14 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  TextInput,
+  Keyboard,
+  Platform,
 } from 'react-native';
+import Reanimated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera } from 'react-native-vision-camera';
@@ -27,7 +34,6 @@ import {
 import { updateCaseStatus, getCase } from '@/lib/cases';
 import { useRecorder, uploadAudioAndTranscribe } from '@/lib/audio';
 import { useInterrogationStore } from '@/lib/store';
-import { getSignalLabel } from '@/lib/signalButtons';
 import { useCameraCapture } from '@/lib/cameraCapture';
 import { analyzeVoiceTone } from '@/lib/bodyLanguageAnalysis';
 import { analysisSocket } from '@/lib/analysisSocket';
@@ -88,6 +94,13 @@ export default function SessionScreen() {
     audioPath: string;
     localUri: string;
   } | null>(null);
+  const [pendingTranscriptText, setPendingTranscriptText] = useState('');
+  const [isEditingTranscript, setIsEditingTranscript] = useState(false);
+  const [editDraft, setEditDraft] = useState('');
+  // Kullanıcının çıkış niyetini takip eder: ✓ → 'save', ✕ → 'discard',
+  // klavyenin dışarıdan kapatılması (geri tuşu vb.) → null (taslak korunur)
+  const closeIntentRef = useRef<'save' | 'discard' | null>(null);
+  const editTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [detectedSignals, setDetectedSignals] = useState<{
     bodyLanguage: string[];
     voiceTone: string[];
@@ -97,6 +110,26 @@ export default function SessionScreen() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [finishBusy, setFinishBusy] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
+
+  const textInputRef = useRef<TextInput>(null);
+  const isEditingTranscriptRef = useRef(false);
+  const currentScrollYRef = useRef(0);
+  const savedScrollYRef = useRef<number | null>(null);
+  const editDraftRef = useRef('');
+
+  // Klavye yüksekliğini takip et — edit bar'ı klavyenin üstüne konumlandırmak için.
+  // ⚡ NATIVE WORKLET: useAnimatedKeyboard reanimated UI thread'de çalışır,
+  // klavyenin her frame'inde keyboard.height SharedValue olarak güncellenir.
+  // JS event lag'i yoktur → edit bar klavye ile %100 senkron yukarı çıkar.
+  // Samsung A15 (One UI 6 / Android 14 edge-to-edge) dahil tüm cihazlarda çalışır,
+  // çünkü altta WindowInsetsAnimation API kullanılır.
+  const keyboard = useAnimatedKeyboard();
+  const footerAnimatedStyle = useAnimatedStyle(() => ({
+    marginBottom: keyboard.height.value,
+  }));
+  // JS state hâlâ var: sadece "klavye açık mı?" kararı için (scroll restore,
+  // closeEditBar fallback gibi mantık adımları). Layout'a DEĞMEZ artık.
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const recordPulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -140,7 +173,7 @@ export default function SessionScreen() {
           const msgs = await getMessages(sess.id);
           setSession(sess);
           setLastAiMessageId(msgs[msgs.length - 1]?.id ?? null);
-          setChatItems(buildChatFromMessages(msgs));
+          setChatItems(dedupeById(buildChatFromMessages(msgs)));
           return;
         }
 
@@ -152,14 +185,14 @@ export default function SessionScreen() {
             msgs = [message];
             setLastAiMessageId(message.id);
             setSession({ ...sess, question_count: 1, questions_in_phase: 1, active_tactic: move.move.tactic_used });
-            setChatItems(buildChatFromMessages(msgs));
+            setChatItems(dedupeById(buildChatFromMessages(msgs)));
           } finally {
             setProcessing(false);
           }
         } else {
           setSession(sess);
           setLastAiMessageId(msgs[msgs.length - 1]?.id ?? null);
-          setChatItems(buildChatFromMessages(msgs));
+          setChatItems(dedupeById(buildChatFromMessages(msgs)));
         }
       } catch (err) {
         if (!cancelled) {
@@ -180,6 +213,97 @@ export default function SessionScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // editDraft state'inin son değerini ref'te tut — async olaylarda (keyboard listener)
+  // kapanış üzerinden stale closure problemine düşmemek için
+  useEffect(() => {
+    editDraftRef.current = editDraft;
+  }, [editDraft]);
+
+  // WhatsApp-style edit kapanışı:
+  //   1) ✓ ise mesaj balonunu yeni metinle güncelle (kullanıcı save niyeti).
+  //   2) Edit bar'ı YERİNDE TUT — klavye dismiss animasyonu süresince kaybolmasın.
+  //   3) Klavye tam kapandığında (keyboardDidHide) edit moddan çık.
+  // Fallback timer: keyboardDidHide gelmezse 600ms sonra zorla kapanırız.
+  const closeEditBar = useCallback((save: boolean) => {
+    closeIntentRef.current = save ? 'save' : 'discard';
+    if (save) setPendingTranscriptText(editDraftRef.current);
+    Keyboard.dismiss();
+    if (editTimerRef.current) clearTimeout(editTimerRef.current);
+    editTimerRef.current = setTimeout(() => {
+      editTimerRef.current = null;
+      if (!isEditingTranscriptRef.current) return;
+      if (closeIntentRef.current === null) {
+        setPendingTranscriptText(editDraftRef.current);
+      }
+      closeIntentRef.current = null;
+      isEditingTranscriptRef.current = false;
+      setKeyboardOpen(false);
+      setIsEditingTranscript(false);
+    }, 600);
+  }, []);
+
+  useEffect(() => {
+    // NOT: Layout (marginBottom) artık useAnimatedKeyboard ile native worklet'te
+    // yönetiliyor. Bu listener'lar SADECE JS-tarafı state yönetimi için:
+    // — scroll restore (edit moddan önceki konuma dön)
+    // — closeEditBar fallback temizliği
+    // — keyboardOpen bayrağı (paddingBottom hesabı için)
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardOpen(true);
+      if (isEditingTranscriptRef.current) {
+        // Edit modunda klavye açıldığında pending baloncuğu görünür kıl
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollToEnd({ animated: true });
+        });
+      }
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      if (editTimerRef.current) {
+        clearTimeout(editTimerRef.current);
+        editTimerRef.current = null;
+      }
+      setKeyboardOpen(false);
+
+      if (isEditingTranscriptRef.current) {
+        // closeEditBar ✓ ise pendingTranscriptText zaten setlendi.
+        // closeEditBar ✕ ise taslak yok sayılır.
+        // null (external dismiss — geri tuşu, başka tap) → taslağı kaybetme.
+        if (closeIntentRef.current === null) {
+          setPendingTranscriptText(editDraftRef.current);
+        }
+        closeIntentRef.current = null;
+        isEditingTranscriptRef.current = false;
+        setIsEditingTranscript(false);
+      }
+
+      // Düzenleme öncesi scroll pozisyonuna geri dön
+      if (savedScrollYRef.current !== null) {
+        const y = savedScrollYRef.current;
+        savedScrollYRef.current = null;
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollTo({ y, animated: true });
+        });
+      }
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // isEditingTranscript değişimini ref'e yansıt + edit moda girince TextInput'u focus'la
+  useEffect(() => {
+    isEditingTranscriptRef.current = isEditingTranscript;
+    if (!isEditingTranscript) return;
+    const timer = setTimeout(() => textInputRef.current?.focus(), 80);
+    return () => clearTimeout(timer);
+  }, [isEditingTranscript]);
 
   // ---------------------------------------------------------------------
   // Python analiz servisi (WebSocket) — canlı sinyal akışı
@@ -247,15 +371,9 @@ export default function SessionScreen() {
           audioPath: transcribeRes.audioPath,
           localUri: result.uri,
         });
+        setPendingTranscriptText(transcribeRes.transcript);
         setDetectedSignals((prev) => ({ ...prev, voiceTone }));
         analysisSocket.sendVoiceResult(voiceTone);
-
-        if (transcribeRes.transcript) {
-          setChatItems((prev) => [
-            ...prev,
-            { id: `pending-${Date.now()}`, type: 'suspect', content: transcribeRes.transcript },
-          ]);
-        }
       } catch (err) {
         setRecording(false);
         Alert.alert('Kayıt hatası', err instanceof Error ? err.message : 'Bilinmeyen');
@@ -318,19 +436,21 @@ export default function SessionScreen() {
       const result = await processAnswer({
         sessionId: session.id,
         previousMessageId: lastAiMessageId,
-        answerText: pendingTranscript.text,
+        answerText: pendingTranscriptText,
         answerAudioUrl: pendingTranscript.audioPath,
         bodyLanguage: detectedSignals.bodyLanguage,
         voiceTone: detectedSignals.voiceTone,
       });
 
       setChatItems((prev) => {
-        const filtered = prev.filter((c) => !c.id.startsWith('pending-'));
+        const filtered = prev.filter(
+          (c) => !c.id.startsWith('pending-') && c.id !== `${lastAiMessageId}-answer`,
+        );
         const additions: ChatItem[] = [];
         additions.push({
           id: `${lastAiMessageId}-answer`,
           type: 'suspect',
-          content: pendingTranscript.text,
+          content: pendingTranscriptText,
         });
         for (const c of result.newMove.analysis.contradictions) {
           additions.push({
@@ -367,12 +487,13 @@ export default function SessionScreen() {
           tactic: result.newAiMessage.tactic_used ?? undefined,
         });
 
-        return [...filtered, ...additions];
+        return dedupeById([...filtered, ...additions]);
       });
 
       setSession(result.newSession);
       setLastAiMessageId(result.newAiMessage.id);
       setPendingTranscript(null);
+      setPendingTranscriptText('');
       bodyLanguageSetRef.current = new Set();
       setDetectedSignals({ bodyLanguage: [], voiceTone: [] });
     } catch (err) {
@@ -433,7 +554,7 @@ export default function SessionScreen() {
 
   const canGenerate =
     !!pendingTranscript &&
-    pendingTranscript.text.length > 0 &&
+    pendingTranscriptText.trim().length > 0 &&
     !isProcessing &&
     !isRecording &&
     caseRow.status === 'open';
@@ -470,11 +591,38 @@ export default function SessionScreen() {
       <ScrollView
         ref={scrollRef}
         style={styles.chat}
-        contentContainerStyle={styles.chatContent}
+        contentContainerStyle={[
+          styles.chatContent,
+          // Edit modunda alt kısımda extra alan; son balon klavyenin üzerinde kalsın
+          isEditingTranscript && { paddingBottom: 24 + spacing.lg },
+        ]}
+        onScroll={(e) => {
+          currentScrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
       >
         {chatItems.map((c) => (
           <ChatBubble key={c.id} type={c.type} content={c.content} tactic={c.tactic} />
         ))}
+
+        {/* Transkript balonu — sohbet akışı içinde, basılı tut → edit.
+            ⚠ NOT: Orijinal balon edit boyunca DEĞİŞMEZ (WhatsApp davranışı).
+            Kullanıcı klavyede yazdıkça sadece edit field güncellenir; balon
+            yalnızca ✓ ile save edildiğinde yeni metni gösterir. */}
+        {!isReadOnly && pendingTranscript ? (
+          <ChatBubble
+            type="suspect"
+            content={pendingTranscriptText}
+            highlighted={isEditingTranscript}
+            onLongPress={() => {
+              savedScrollYRef.current = currentScrollYRef.current;
+              setEditDraft(pendingTranscriptText);
+              setIsEditingTranscript(true);
+            }}
+          />
+        ) : null}
+
         {isProcessing ? (
           <View style={styles.processing}>
             <ActivityIndicator color={colors.brandBlue} />
@@ -484,20 +632,6 @@ export default function SessionScreen() {
           </View>
         ) : null}
       </ScrollView>
-
-      {/* Otomatik tespit edilen sinyaller — soru üretilmeden önce ön izleme */}
-      {!isReadOnly && allDetected.length > 0 ? (
-        <View style={styles.signalStrip}>
-          <Text style={styles.signalStripTitle}>OTOMATİK TESPİT:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signalStripRow}>
-            {allDetected.map((key) => (
-              <View key={key} style={styles.signalBadge}>
-                <Text style={styles.signalBadgeText}>{getSignalLabel(key)}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
 
       {/* Kamera önizlemesi — sadece kayıt sırasında */}
       {showCameraPreview && cameraDevice ? (
@@ -516,59 +650,106 @@ export default function SessionScreen() {
         </View>
       ) : null}
 
-      {/* Alt aksiyon barı */}
-      {!isReadOnly ? (
-        <View style={[styles.actionBar, { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) }]}>
-          <Pressable
-            onPress={onMicPress}
-            disabled={isProcessing}
-            style={({ pressed }) => [
-              styles.micButton,
-              isRecording && styles.micRecording,
-              pressed && { opacity: 0.85 },
-              isProcessing && { opacity: 0.5 },
+      {/* Alt footer — edit bar VE action bar tek bir konteyner içinde.
+          ⚡ marginBottom NATIVE WORKLET'le yönetilir (useAnimatedKeyboard):
+             klavyenin her frame'inde footer onunla birlikte yukarı kayar.
+             JS event lag'i YOK → edit bar klavyenin tam üstüne yapışık kalır.
+          - Edit mode: edit bar görünür, klavyenin tam üstünde.
+          - ✓/✕ → closeEditBar yalnızca Keyboard.dismiss() çağırır; edit bar SAĞ kalır.
+          - keyboardDidHide → keyboardOpen=false + isEditingTranscript=false batch'lenir
+            → editBar unmount + actionBar mount tek frame'de.
+          - Action bar her zaman ekranın en altında, orijinal koordinatında oturur. */}
+      <Reanimated.View style={footerAnimatedStyle}>
+        {!isReadOnly && isEditingTranscript ? (
+          <View
+            style={[
+              styles.editBar,
+              { paddingBottom: keyboardOpen ? spacing.sm : insets.bottom },
             ]}
           >
-            <Animated.View
-              style={[
-                styles.micPulse,
-                {
-                  opacity: recordPulse.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] }),
-                  transform: [
-                    {
-                      scale: recordPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] }),
-                    },
-                  ],
-                },
-              ]}
+            <Pressable
+              onPress={() => closeEditBar(false)}
+              style={styles.editBarCancel}
+              hitSlop={8}
+            >
+              <Text style={styles.editBarCancelText}>✕</Text>
+            </Pressable>
+            <TextInput
+              ref={textInputRef}
+              style={styles.editBarInput}
+              value={editDraft}
+              onChangeText={setEditDraft}
+              multiline
+              textAlignVertical="top"
+              autoFocus={false}
+              returnKeyType="done"
+              blurOnSubmit={false}
             />
-            <Text style={styles.micIcon}>{isRecording ? '■' : '●'}</Text>
-          </Pressable>
+            <Pressable
+              onPress={() => closeEditBar(true)}
+              style={styles.editBarSave}
+              hitSlop={8}
+            >
+              <Text style={styles.editBarSaveText}>✓</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
-          <Pressable
-            onPress={onGenerateMove}
-            disabled={!canGenerate}
-            style={({ pressed }) => [
-              styles.generateButton,
-              !canGenerate && styles.generateDisabled,
-              pressed && canGenerate && { opacity: 0.9 },
-            ]}
-          >
-            <Text style={styles.generateText}>SORU ÜRET</Text>
-          </Pressable>
+        {!isReadOnly && !isEditingTranscript ? (
+          <View style={[styles.actionBar, { paddingBottom: insets.bottom }]}>
+            <Pressable
+              onPress={onMicPress}
+              disabled={isProcessing}
+              style={({ pressed }) => [
+                styles.micButton,
+                isRecording && styles.micRecording,
+                pressed && { opacity: 0.85 },
+                isProcessing && { opacity: 0.5 },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.micPulse,
+                  {
+                    opacity: recordPulse.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] }),
+                    transform: [
+                      {
+                        scale: recordPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <Text style={styles.micIcon}>{isRecording ? '■' : '●'}</Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => setFinishOpen(true)}
-            style={({ pressed }) => [styles.finishButton, pressed && { opacity: 0.85 }]}
-          >
-            <Text style={styles.finishText}>BİTİR</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.readOnlyBar}>
-          <Text style={styles.readOnlyText}>BU VAKA KAPALI — SALT OKUNUR</Text>
-        </View>
-      )}
+            <Pressable
+              onPress={onGenerateMove}
+              disabled={!canGenerate}
+              style={({ pressed }) => [
+                styles.generateButton,
+                !canGenerate && styles.generateDisabled,
+                pressed && canGenerate && { opacity: 0.9 },
+              ]}
+            >
+              <Text style={styles.generateText}>SORU ÜRET</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setFinishOpen(true)}
+              style={({ pressed }) => [styles.finishButton, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.finishText}>BİTİR</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {isReadOnly ? (
+          <View style={styles.readOnlyBar}>
+            <Text style={styles.readOnlyText}>BU VAKA KAPALI — SALT OKUNUR</Text>
+          </View>
+        ) : null}
+      </Reanimated.View>
 
       <FinishModal
         visible={finishOpen}
@@ -579,6 +760,15 @@ export default function SessionScreen() {
       />
     </View>
   );
+}
+
+function dedupeById(items: ChatItem[]): ChatItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 
 function buildChatFromMessages(messages: Message[]): ChatItem[] {
@@ -647,38 +837,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     gap: 6,
-  },
-
-  signalStrip: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingVertical: 6,
-  },
-  signalStripTitle: {
-    ...typography.labelCaps,
-    color: colors.textSecondary,
-    fontSize: 8,
-    paddingHorizontal: spacing.lg,
-    marginBottom: 4,
-  },
-  signalStripRow: {
-    paddingHorizontal: spacing.lg,
-    gap: 6,
-    flexDirection: 'row',
-  },
-  signalBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(224, 82, 82, 0.12)',
-    borderWidth: 1,
-    borderColor: colors.brandRed,
-  },
-  signalBadgeText: {
-    ...typography.labelCaps,
-    color: colors.brandRed,
-    fontSize: 9,
   },
 
   cameraPreviewContainer: {
@@ -801,5 +959,56 @@ const styles = StyleSheet.create({
     ...typography.labelCaps,
     color: colors.textSecondary,
     fontSize: 10,
+  },
+
+  editBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.brandBlue,
+  },
+  editBarCancel: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBarCancelText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+  },
+  editBarInput: {
+    flex: 1,
+    ...typography.bodyMd,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.brandBlue,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    maxHeight: 120,
+  },
+  editBarSave: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.brandGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBarSaveText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
 });

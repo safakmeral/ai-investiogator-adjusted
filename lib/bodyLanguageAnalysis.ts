@@ -84,12 +84,9 @@ export async function analyzeBodyLanguageFrames(
 export async function analyzeVoiceTone(localUri: string): Promise<string[]> {
   if (!localUri) return [];
   try {
-    const response = await fetch(localUri);
-    const blob = await response.blob();
     const form = new FormData();
-    // React Native FormData için açıkça ad + tip ver
+    // React Native FormData uri/name/type özel formatını kabul eder; blob'a gerek yok
     form.append('audio', {
-      // @ts-expect-error — RN FormData özel obje formatını kabul eder
       uri: localUri,
       name: 'answer.m4a',
       type: 'audio/m4a',

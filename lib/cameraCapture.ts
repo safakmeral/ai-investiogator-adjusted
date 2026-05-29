@@ -40,7 +40,10 @@ export function useCameraCapture(): UseCameraCapture {
   const busyRef = useRef(false);
   const metaRef = useRef<CaptureMeta | null>(null);
 
-  const device = useCameraDevice('front') ?? useCameraDevice('back');
+  // Hooks kuralı: koşullu çağrı yasak — iki hook'u da her render'da çağır
+  const frontDevice = useCameraDevice('front');
+  const backDevice = useCameraDevice('back');
+  const device = frontDevice ?? backDevice;
   const { hasPermission, requestPermission: askPermission } = useCameraPermission();
   const [isCapturing, setIsCapturing] = useState(false);
 

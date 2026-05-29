@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, radius, spacing, typography } from '@/lib/theme';
 
 export type ChatBubbleType =
@@ -15,9 +15,11 @@ interface Props {
   type: ChatBubbleType;
   content: string;
   tactic?: string;
+  onLongPress?: () => void;
+  highlighted?: boolean;
 }
 
-export function ChatBubble({ type, content, tactic }: Props) {
+export function ChatBubble({ type, content, tactic, onLongPress, highlighted }: Props) {
   switch (type) {
     case 'ai':
       return (
@@ -29,12 +31,19 @@ export function ChatBubble({ type, content, tactic }: Props) {
       );
     case 'suspect':
       return (
-        <View style={[styles.row, styles.rowRight]}>
-          <View style={[styles.bubble, styles.suspectBubble]}>
+        <Pressable
+          onLongPress={onLongPress}
+          style={({ pressed }) => [
+            styles.row,
+            styles.rowRight,
+            pressed && onLongPress ? { opacity: 0.75 } : null,
+          ]}
+        >
+          <View style={[styles.bubble, styles.suspectBubble, highlighted && styles.suspectBubbleHighlighted]}>
             <Text style={styles.suspectLabel}>ŞÜPHELİ</Text>
             <Text style={styles.suspectText}>{content}</Text>
           </View>
-        </View>
+        </Pressable>
       );
     case 'contradiction_alert':
       return (
@@ -135,6 +144,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  suspectBubbleHighlighted: {
+    borderColor: colors.brandBlue,
   },
   suspectLabel: {
     ...typography.labelCaps,
