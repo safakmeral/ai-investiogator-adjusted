@@ -79,6 +79,8 @@ class AnalysisSocket {
   }
 
   sendVoiceResult(voiceTone: string[]): void {
+    const state = this.ws ? this.ws.readyState : -1;
+    console.log('[analysisSocket] sendVoiceResult', { voiceTone, wsState: state });
     this.send({ type: 'voice_result', voiceTone });
   }
 

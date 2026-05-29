@@ -28,6 +28,49 @@ from mediapipe.tasks import python as mp_tasks_python
 from mediapipe.tasks.python import vision as mp_tasks_vision
 from pydantic import BaseModel
 
+# Face mesh connections for rich landmark visualization (hardcoded from MediaPipe Face Mesh)
+# Newer mediapipe versions removed the `mp.solutions` legacy module, so we inline the indices.
+_FACE_OVAL = [
+    (10, 338), (338, 297), (297, 332), (332, 284), (284, 251), (251, 389),
+    (389, 356), (356, 454), (454, 323), (323, 361), (361, 288), (288, 397),
+    (397, 365), (365, 379), (379, 378), (378, 400), (400, 377), (377, 152),
+    (152, 148), (148, 176), (176, 149), (149, 150), (150, 136), (136, 172),
+    (172, 58), (58, 132), (132, 93), (93, 234), (234, 127), (127, 162),
+    (162, 21), (21, 54), (54, 103), (103, 67), (67, 109), (109, 10),
+]
+_LEFT_EYE = [
+    (263, 249), (249, 390), (390, 373), (373, 374), (374, 380), (380, 381),
+    (381, 382), (382, 362), (263, 466), (466, 388), (388, 387), (387, 386),
+    (386, 385), (385, 384), (384, 398), (398, 362),
+]
+_RIGHT_EYE = [
+    (33, 7), (7, 163), (163, 144), (144, 145), (145, 153), (153, 154), (154, 155),
+    (155, 133), (33, 246), (246, 161), (161, 160), (160, 159), (159, 158),
+    (158, 157), (157, 173), (173, 133),
+]
+_LEFT_EYEBROW = [
+    (276, 283), (283, 282), (282, 295), (295, 285), (300, 293), (293, 334),
+    (334, 296), (296, 336),
+]
+_RIGHT_EYEBROW = [
+    (46, 53), (53, 52), (52, 65), (65, 55), (70, 63), (63, 105), (105, 66), (66, 107),
+]
+_LIPS = [
+    (61, 146), (146, 91), (91, 181), (181, 84), (84, 17), (17, 314), (314, 405),
+    (405, 321), (321, 375), (375, 291), (61, 185), (185, 40), (40, 39), (39, 37),
+    (37, 0), (0, 267), (267, 269), (269, 270), (270, 409), (409, 291),
+    (78, 95), (95, 88), (88, 178), (178, 87), (87, 14), (14, 317), (317, 402),
+    (402, 318), (318, 324), (324, 308), (78, 191), (191, 80), (80, 81), (81, 82),
+    (82, 13), (13, 312), (312, 311), (311, 310), (310, 415), (415, 308),
+]
+_FACE_CONTOUR_CONNECTIONS = frozenset(
+    _FACE_OVAL + _LEFT_EYE + _RIGHT_EYE + _LEFT_EYEBROW + _RIGHT_EYEBROW + _LIPS
+)
+_FACE_IRIS_CONNECTIONS = frozenset([
+    (474, 475), (475, 476), (476, 477), (477, 474),
+    (469, 470), (470, 471), (471, 472), (472, 469),
+])
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("ai-investigator")
 
@@ -178,13 +221,13 @@ def frame_motion(prev_gray: Optional[np.ndarray], cur_gray: np.ndarray) -> float
 # THRESHOLDS
 # =====================================================================
 
-EMOTION_THRESHOLD = 0.35
-HEAD_YAW_THRESHOLD = 25.0
-HEAD_PITCH_DOWN_THRESHOLD = 22.0
+EMOTION_THRESHOLD = 0.22
+HEAD_YAW_THRESHOLD = 18.0
+HEAD_PITCH_DOWN_THRESHOLD = 15.0
 MOTION_THRESHOLD_LOW = 1.5
 MOTION_THRESHOLD_HIGH = 8.0
-HAND_FACE_PROXIMITY = 0.18
-LIP_DEFORM_THRESHOLD = 0.040
+HAND_FACE_PROXIMITY = 0.10
+LIP_DEFORM_THRESHOLD = 0.18
 
 
 # =====================================================================
@@ -254,7 +297,10 @@ def hand_near_face(pose_result, face_result) -> bool:
         pl, fl = pose_result.pose_landmarks[0], face_result.face_landmarks[0]
         nose_xy = np.array([fl[1].x, fl[1].y])
         for idx in (15, 16):  # wrists
-            d = np.linalg.norm(np.array([pl[idx].x, pl[idx].y]) - nose_xy)
+            lm = pl[idx]
+            if getattr(lm, "visibility", 1.0) < 0.5:
+                continue
+            d = np.linalg.norm(np.array([lm.x, lm.y]) - nose_xy)
             if d < HAND_FACE_PROXIMITY:
                 return True
         return False
@@ -344,8 +390,28 @@ def annotate_frame(img_bgr: np.ndarray, pose_result, face_result) -> np.ndarray:
     out = img_bgr.copy()
     h, w = img_bgr.shape[:2]
     if face_result and face_result.face_landmarks:
-        for lm in face_result.face_landmarks[0][::8]:
-            cv2.circle(out, (int(lm.x * w), int(lm.y * h)), 1, (60, 60, 230), -1)
+        lms = face_result.face_landmarks[0]
+        # Draw face contour connections (face outline, eyes, eyebrows, lips, nose)
+        for i, j in _FACE_CONTOUR_CONNECTIONS:
+            if i < len(lms) and j < len(lms):
+                cv2.line(
+                    out,
+                    (int(lms[i].x * w), int(lms[i].y * h)),
+                    (int(lms[j].x * w), int(lms[j].y * h)),
+                    (0, 220, 180), 1,
+                )
+        # Draw iris connections
+        for i, j in _FACE_IRIS_CONNECTIONS:
+            if i < len(lms) and j < len(lms):
+                cv2.line(
+                    out,
+                    (int(lms[i].x * w), int(lms[i].y * h)),
+                    (int(lms[j].x * w), int(lms[j].y * h)),
+                    (0, 180, 255), 1,
+                )
+        # Draw all 468 landmarks
+        for lm in lms:
+            cv2.circle(out, (int(lm.x * w), int(lm.y * h)), 2, (200, 200, 255), -1)
     if pose_result and pose_result.pose_landmarks:
         pl = pose_result.pose_landmarks[0]
         for i, j in _POSE_CONNECTIONS:
@@ -475,10 +541,11 @@ async def analyze_frames(req: FramesRequest):
 # VOICE TONE ANALYSIS
 # =====================================================================
 
-VOICE_HIGH_RMS_RATIO = 1.5
-VOICE_LOW_RMS_RATIO = 0.4
-VOICE_PITCH_STD_THRESHOLD = 35.0
-VOICE_SILENCE_RATIO_THRESHOLD = 0.30
+VOICE_HIGH_RMS_RATIO = 1.2
+VOICE_LOW_RMS_RATIO = 0.35
+VOICE_PITCH_STD_THRESHOLD = 18.0
+VOICE_SILENCE_RATIO_THRESHOLD = 0.25
+WHISPER_ABS_THRESHOLD = 0.012
 
 
 def _load_audio(audio_bytes: bytes) -> Tuple[Optional[np.ndarray], int]:
@@ -501,19 +568,17 @@ def _load_audio(audio_bytes: bytes) -> Tuple[Optional[np.ndarray], int]:
         audio_stream = next((s for s in container.streams if s.type == "audio"), None)
         if audio_stream is None:
             return None, 16000
-        native_sr = audio_stream.codec_context.sample_rate
+        # AudioResampler ensures float32 planar mono at 16kHz — avoids int16 normalization bug
+        resampler = av.AudioResampler(format='fltp', layout='mono', rate=16000)
         samples = []
         for frame in container.decode(audio_stream):
-            arr = frame.to_ndarray()
-            if arr.ndim > 1:
-                arr = arr.mean(axis=0)
-            samples.append(arr.astype(np.float32))
+            for resampled in resampler.resample(frame):
+                arr = resampled.to_ndarray().flatten().astype(np.float32)
+                samples.append(arr)
         container.close()
         if not samples:
             return None, 16000
         y = np.concatenate(samples)
-        if native_sr != 16000:
-            y = librosa.resample(y, orig_sr=native_sr, target_sr=16000)
         return y, 16000
     except Exception as e:
         log.warning("Audio load failed (librosa + PyAV): %s", e)
@@ -532,8 +597,10 @@ def analyze_audio_bytes(audio_bytes: bytes) -> Tuple[List[str], dict]:
 
     y, sr = _load_audio(audio_bytes)
     if y is None or y.size == 0:
+        log.warning("voice analysis: audio load returned empty — check PyAV/librosa install")
         return [], debug
 
+    log.info("voice analysis: loaded %d samples at %d Hz (%.2fs)", y.size, sr, y.size / sr)
     frame_length = int(0.025 * sr)
     hop_length = int(0.010 * sr)
     rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
@@ -550,11 +617,15 @@ def analyze_audio_bytes(audio_bytes: bytes) -> Tuple[List[str], dict]:
     voiced_rms = rms[voiced_mask]
     voiced_mean = float(np.mean(voiced_rms)) if voiced_rms.size else mean_rms
 
-    debug.update({"voiced_mean": voiced_mean, "baseline": baseline})
+    debug.update({"voiced_mean": voiced_mean, "baseline": baseline, "mean_rms": mean_rms, "peak": peak})
+    log.info("voice metrics: mean_rms=%.5f voiced_mean=%.5f baseline=%.5f peak=%.5f",
+             mean_rms, voiced_mean, baseline, peak)
 
     if voiced_mean > mean_rms * VOICE_HIGH_RMS_RATIO:
         detected.add("sesi_yükseldi")
-    if voiced_mean < mean_rms * VOICE_LOW_RMS_RATIO and voiced_mean > 1e-5:
+    # pyin fails on unvoiced whispers, so also check absolute low RMS threshold
+    if (voiced_mean < mean_rms * VOICE_LOW_RMS_RATIO or voiced_mean < WHISPER_ABS_THRESHOLD) \
+            and voiced_mean > 1e-6:
         detected.add("fısıldadı")
 
     try:
@@ -570,6 +641,7 @@ def analyze_audio_bytes(audio_bytes: bytes) -> Tuple[List[str], dict]:
 
     silence_ratio = float(np.mean(~voiced_mask))
     debug["silence_ratio"] = silence_ratio
+    log.info("voice metrics: silence_ratio=%.3f detected=%s", silence_ratio, detected)
     if silence_ratio > VOICE_SILENCE_RATIO_THRESHOLD and len(rms) > 50:
         detected.add("cevap_zorlandı")
 
@@ -856,6 +928,7 @@ async def ws_phone(ws: WebSocket):
                 stream_state.prev_shoulder_y = None
                 stream_state.prev_wrists = None
                 stream_state.last_emotion = set()
+                stream_state.consec = {k: 0 for k in CONSEC_REQUIRED}
                 await manager.broadcast_to_dashboards({
                     "type": "session_event",
                     "event": "recording_start",
@@ -871,9 +944,12 @@ async def ws_phone(ws: WebSocket):
                 })
 
             elif mtype == "voice_result":
+                vt = msg.get("voiceTone") or []
+                log.info("voice_result received from phone: %s — broadcasting to %d dashboards",
+                         vt, len(manager.dashboards))
                 await manager.broadcast_to_dashboards({
                     "type": "voice_result",
-                    "voiceTone": msg.get("voiceTone") or [],
+                    "voiceTone": vt,
                 })
 
     except WebSocketDisconnect:
